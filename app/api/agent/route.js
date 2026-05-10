@@ -7,6 +7,8 @@ const STATUS_PATH = path.join(process.cwd(), 'agent_status.json');
 const AGENT_DIR = process.cwd();
 const VENV_PYTHON = path.join(AGENT_DIR, 'venv', 'bin', 'python3');
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     if (!fs.existsSync(STATUS_PATH)) {
@@ -26,9 +28,19 @@ export async function POST() {
   try {
     // Check if already running
     if (fs.existsSync(STATUS_PATH)) {
-      const data = JSON.parse(fs.readFileSync(STATUS_PATH, 'utf-8'));
-      if (data.status === 'running') {
-        return NextResponse.json({ success: false, error: 'Agent is already running' }, { status: 400 });
+      try {
+        const data = JSON.parse(fs.readFileSync(STATUS_PATH, 'utf-8'));
+        if (data.status === 'running' && data.pid) {
+          // Check if process actually exists
+          try {
+            process.kill(data.pid, 0); // signal 0 just checks existence
+            return NextResponse.json({ success: false, error: 'Agent is already running' }, { status: 400 });
+          } catch (e) {
+            // Process doesn't exist, we can proceed
+          }
+        }
+      } catch (e) {
+        // Corrupt JSON or missing PID, proceed
       }
     }
 
@@ -42,7 +54,7 @@ export async function POST() {
     const pid = child.pid;
     child.unref();
 
-    // Initial status with PID
+    // Initial status
     const initialStatus = { 
       status: 'running', 
       step: 'Starting...', 
@@ -65,22 +77,19 @@ export async function DELETE() {
     }
 
     const data = JSON.parse(fs.readFileSync(STATUS_PATH, 'utf-8'));
-    if (data.status !== 'running' || !data.pid) {
-      return NextResponse.json({ success: false, error: 'Agent not running' }, { status: 400 });
+    if (data.pid) {
+      try {
+        process.kill(data.pid, 'SIGKILL'); // Use SIGKILL for immediate stop
+      } catch (e) {
+        console.log('Process kill failed:', e.message);
+      }
     }
 
-    try {
-      process.kill(data.pid, 'SIGTERM');
-    } catch (e) {
-      // Process might have already finished
-      console.log('Process kill failed:', e.message);
-    }
-
-    // Update status to finished/idle
+    // Update status to idle
     const finalStatus = { 
-      ...data, 
       status: 'idle', 
       step: 'Stopped by user', 
+      progress: { done: 0, total: 50 },
       last_update: new Date().toLocaleTimeString() 
     };
     fs.writeFileSync(STATUS_PATH, JSON.stringify(finalStatus), 'utf-8');

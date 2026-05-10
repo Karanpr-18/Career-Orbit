@@ -50,7 +50,7 @@ export default function JobHuntApp() {
       fetchAgentStatus();
       if (activeTab === 'dashboard') fetchJobs();
       if (activeTab === 'agent') fetchLogs();
-    }, 5000);
+    }, 2000); // Poll every 2 seconds for snappier feel
     return () => clearInterval(interval);
   }, [activeTab]);
 
@@ -127,8 +127,8 @@ export default function JobHuntApp() {
       const result = await response.json();
       if (result.success) {
         // Immediately update status
-        setAgentStatus(prev => ({ ...prev, status: 'running', step: 'Initializing...' }));
-        setTimeout(fetchAgentStatus, 2000);
+        setAgentStatus(prev => ({ ...prev, status: 'running', step: 'Starting...' }));
+        fetchAgentStatus();
       } else {
         alert('Agent error: ' + (result.error || 'Unknown error'));
       }
@@ -146,6 +146,7 @@ export default function JobHuntApp() {
       const response = await fetch('/api/agent', { method: 'DELETE' });
       const result = await response.json();
       if (result.success) {
+        setAgentStatus(prev => ({ ...prev, status: 'idle', step: 'Stopping...' }));
         fetchAgentStatus();
       } else {
         alert('Error stopping agent: ' + (result.error || 'Unknown error'));
