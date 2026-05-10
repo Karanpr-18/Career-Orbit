@@ -436,7 +436,7 @@ tr:hover td { background: rgba(255, 255, 255, 0.03); }
 }
 
 .btn-stop {
-  background: rgba(248, 113, 113, 0.1);
+  background: rgba(248, 113, 113, 0.05);
   color: #f87171;
   border: 1px solid rgba(248, 113, 113, 0.2);
   padding: 0 1.5rem;
@@ -447,17 +447,31 @@ tr:hover td { background: rgba(255, 255, 255, 0.03); }
   justify-content: center;
   gap: 0.5rem;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
 }
 
-.btn-stop:hover {
-  background: rgba(248, 113, 113, 0.2);
-  border-color: rgba(248, 113, 113, 0.4);
+.btn-stop:hover:not(.disabled) {
+  background: #f87171;
+  color: white;
+  border-color: #f87171;
   transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(248, 113, 113, 0.3);
+}
+
+.pulse-red {
+  animation: pulse-red-bg 2s infinite;
+}
+
+@keyframes pulse-red-bg {
+  0% { box-shadow: 0 0 0 0 rgba(248, 113, 113, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(248, 113, 113, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(248, 113, 113, 0); }
 }
 
 .btn-stop.disabled {
-  opacity: 0.4;
+  opacity: 0.3;
   cursor: not-allowed;
   filter: grayscale(1);
   pointer-events: none;

@@ -12,6 +12,7 @@ export default function JobHuntApp() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [agentLogs, setAgentLogs] = useState('Initializing logs...');
   const [isLogsLoading, setIsLogsLoading] = useState(false);
+  const [isStopping, setIsStopping] = useState(false);
   const terminalRef = useRef(null);
   const [showAssistant, setShowAssistant] = useState(false);
 
@@ -140,6 +141,7 @@ export default function JobHuntApp() {
   };
 
   const stopAgent = async () => {
+    setIsStopping(true);
     try {
       const response = await fetch('/api/agent', { method: 'DELETE' });
       const result = await response.json();
@@ -150,6 +152,8 @@ export default function JobHuntApp() {
       }
     } catch (error) {
       console.error('Error stopping agent:', error);
+    } finally {
+      setIsStopping(false);
     }
   };
 
@@ -482,12 +486,18 @@ export default function JobHuntApp() {
                     </button>
 
                     <button 
-                      className={`btn-stop ${agentStatus.status !== 'running' ? 'disabled' : 'shadow-premium'}`}
+                      className={`btn-stop ${agentStatus.status !== 'running' ? 'disabled' : 'shadow-premium pulse-red'}`}
                       onClick={stopAgent}
-                      disabled={agentStatus.status !== 'running'}
+                      disabled={agentStatus.status !== 'running' || isStopping}
                       title="Stop Agent Execution"
                     >
-                      <X size={18} /> Stop
+                      {isStopping ? (
+                        <Loader2 className="spin" size={18} />
+                      ) : (
+                        <>
+                          <X size={18} /> Stop
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>
