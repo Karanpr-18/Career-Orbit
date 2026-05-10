@@ -1,119 +1,112 @@
 # Career-Orbit 🚀
-### *The Next-Gen Autonomous AI Agentic Job Search Engine*
+### *Empowering the World through Autonomous AI Job Discovery*
 
-[![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
-[![Python](https://img.shields.io/badge/Python-3.10+-blue?style=for-the-badge&logo=python)](https://www.python.org/)
-[![Groq](https://img.shields.io/badge/Groq-LPU_Powered-orange?style=for-the-badge)](https://groq.com/)
-[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org/)
+[![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python)](https://www.python.org/)
+[![Groq](https://img.shields.io/badge/Groq-LPU_Powered-orange)](https://groq.com/)
+[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
+[![Open Source](https://img.shields.io/badge/Open%20Source-%E2%9D%A4-red)](https://github.com/Karanpr-18/Career-Orbit)
 
-**Career-Orbit** is a sophisticated multi-agent system designed to automate the most time-consuming aspects of the job hunt: lead discovery, technical alignment review, and personalized outreach. By leveraging the speed of Groq's LPU and the flexibility of AgentScope, Career-Orbit acts as a full-time, autonomous career agent on your desktop.
+**Career-Orbit** is an advanced open-source intelligence platform designed to democratize the job search process. By providing candidates with their own autonomous "Agentic Team," Career-Orbit automates lead discovery, technical alignment review, and personalized outreach.
 
 ---
 
-## 🏛️ System Architecture
+## 🏛️ In-Depth Technical Architecture
 
-Career-Orbit operates on a distributed multi-agent architecture where specialized AI entities collaborate in a strictly governed pipeline.
+Career-Orbit utilizes a **Distributed Multi-Agent Pipeline** built on the AgentScope framework. The system is designed to handle high-concurrency tasks while maintaining strict data integrity and rate-limiting compliance.
 
-### 🧠 The Core Agent Team
+### 🧠 The Core Agent Intelligence
 
-| Agent | Responsibility | Core Logic |
+| Agent | Responsibility | In-Depth Logic |
 | :--- | :--- | :--- |
-| **🔍 Scout** | **Market Intelligence** | Scans 15+ job boards using recursive search queries. Filters for entry-level/intern roles in India & Remote. |
-| **🏗️ Architect** | **Technical Alignment** | Scores JDs against CV using RAG-like matching. Evaluates tech stack, publications, and proof-of-work. |
-| **✍️ Ghostwriter** | **Strategic Outreach** | Crafts personalized cold emails with "Gen-Z Professional" tone. Enforces strict word limits and professional formatting. |
-| **🤖 Assistant** | **User Interaction** | Real-time chat assistant inside the dashboard to answer system queries and provide hunt insights. |
+| **🔍 Scout** | **Market Intelligence** | Executes multi-platform recursive searches. Uses LLM-based semantic filtering to discard senior/staff roles. |
+| **🏗️ Architect** | **Technical Alignment** | Performs **Project-to-JD Matching**. Scores roles (0-10) based on tech stack, research publications, and proof-of-work. |
+| **✍️ Ghostwriter** | **Strategic Outreach** | Crafts personalized emails using a "Gen-Z Professional" tone. Enforces a **100-word limit** and professional formatting. |
+| **🤖 Assistant** | **System Interaction** | Provides a RAG-ready interface to query application history and system logs directly from the dashboard. |
 
-### 🛠️ The Pipeline Workflow
-1.  **Discovery Phase**: Scout gathers raw URLs from Instahyre, Wellfound, LinkedIn, and Career Portals.
-2.  **Filtration Phase**: LLM-based first-pass filtering removes mismatched roles (Senior/Managerial).
-3.  **Deep Review**: Architect scores roles (0-10) based on `config.py` and your `resume.pdf`.
-4.  **Drafting**: Ghostwriter generates highly specific email drafts using Gmail API.
-5.  **Tracking**: Real-time logging to `tracker.csv` and `agent_status.json`.
+### 🛠️ Data Flow & Pipeline Stages
 
----
-
-## 🖥️ Career-Orbit Dashboard (Next.js)
-
-The project includes a premium, glassmorphism-inspired command center built with **Next.js 15**.
-
--   **Autonomous Control**: Side-by-side Start/Stop controls with immediate process state verification.
--   **Live CLI Terminal**: A high-fidelity log viewer that streams agent decision-making logic.
--   **Progress Analytics**: Visual tracking of search depth and mailing throughput.
--   **Application Tracker**: A managed UI to update application statuses (Mailed, Interview, Accepted) directly to the CSV.
-
----
-
-## 📂 Project Structure
-
-```bash
-Careerorbit/
-├── app/                # Next.js 15 Dashboard (Frontend)
-│   ├── api/            # Backend API Routes (Agent & Job Management)
-│   └── globals.css     # Premium UI Design System
-├── agents.py           # Multi-Agent Definitions (AgentScope)
-├── job_hunter.py       # Main Pipeline Orchestration
-├── tools.py            # Low-level Tools (Search, Scrape, Gmail, Playwright)
-├── config.py           # Central Configuration & Target Parameters
-├── tracker.csv         # Persistent Application Database
-└── .env                # Secure Environment Configuration
+```mermaid
+graph TD
+    A[User Starts Agent] --> B[Scout: Web Search & Platform Scraping]
+    B --> C[Phase 1: Filter Mismatched Roles]
+    C --> D[Architect: Scoring & Project Alignment]
+    D --> E{Action: Mail or Skip?}
+    E -- Mail --> F[Ghostwriter: Draft Generation]
+    F --> G[Dispatcher: Gmail API Outreach]
+    E -- Skip --> H[Log & Move to Next]
+    G --> I[Update tracker.csv & Dashboard]
+    H --> I
 ```
 
 ---
 
-## ⚡ Installation & Deployment
+## 🖥️ The Command Center (Next.js 15)
 
-### 1. Python Environment
+The dashboard is not just a UI; it's a real-time orchestrator for the backend agents.
+
+- **Real-Time Telemetry**: Uses a streaming log system to pipe Python `logger` output directly to a virtualized terminal window.
+- **Process Management**: Features a robust `SIGKILL`-based stop system and a PID-check startup routine to prevent zombie processes.
+- **Dynamic Stats**: An interactive grid that provides a live breakdown of your conversion funnel (Leads -> Mailed -> Interviews).
+- **Responsive Design**: A premium, glassmorphism-based design system that scales from desktop monitors to mobile devices.
+
+---
+
+## ⚙️ Advanced Configuration & Customization
+
+### 1. Broadening the Funnel (`config.py`)
+Customize your search engine to target specific industries or niches:
+- **`TARGET_SITES`**: Currently supports 15+ major platforms including Wellfound, Instahyre, and LinkedIn.
+- **`SEARCH_QUERIES`**: Highly customizable list of search variations (e.g., "GenAI Intern India", "Junior ML Engineer").
+
+### 2. Scoring Logic (`Architect`)
+The Architect evaluates jobs based on:
+- **Tech Stack Match**: Does the JD mention your core languages (Python, JS, etc.)?
+- **Proof of Work**: Does the JD align with your projects (Humana, TalentAI, etc.)?
+- **Research Alignment**: Mentioning publications if the role is research-heavy.
+
+---
+
+## ⚡ Deployment & Setup
+
+### 1. Prerequisites
+- **Python 3.10+** (Virtual environment highly recommended)
+- **Node.js 18+** (For the Dashboard)
+- **Groq API Key** (For inference speeds up to 500 tokens/sec)
+- **Google OAuth2** (`credentials.json` for Gmail)
+
+### 2. Installation
 ```bash
+# Clone and Setup Python
+git clone https://github.com/Karanpr-18/Career-Orbit.git
+cd Career-Orbit
 python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 playwright install chromium
-```
 
-### 2. Frontend Setup
-```bash
+# Setup Dashboard
 npm install
 npm run dev
 ```
 
-### 3. API Configuration
-Ensure your `.env` contains:
-- `GROQ_API_KEY`: Groq Cloud API Key.
-- `RESUME_PATH`: Absolute path to your resume PDF.
-- `TRACKER_CSV_PATH`: Path to the local `tracker.csv`.
+### 3. Environment Variables (`.env`)
+```env
+GROQ_API_KEY=your_key
+TRACKER_CSV_PATH=/path/to/tracker.csv
+RESUME_PATH=/path/to/resume.pdf
+CV_PATH=/path/to/cv.pdf
+```
 
 ---
 
-## ⚙️ Advanced Configuration
+## 🤝 Contributing to the Movement
 
-### Broadening the Search Funnel
-In `config.py`, you can modify `TARGET_SITES` and `SEARCH_QUERIES`. The system is currently optimized for:
--   **Roles**: AI/ML, Data Science, Python, Research.
--   **Level**: Internships, Junior, Associate.
--   **Window**: Last 15 days.
-
-### Outreach Strategy
-The **Ghostwriter** is programmed to use a professional yet modern tone. You can adjust the signature and proof-of-work highlights in `agents.py` to match your personal brand.
+Career-Orbit is an open-source model for the world. We encourage developers to expand its capabilities:
+- **New Scout Sites**: Add support for more region-specific job boards.
+- **New Agent Personalities**: Help us refine the Ghostwriter's outreach strategies.
+- **UI Enhancements**: Improve the dashboard's analytics and visualization tools.
 
 ---
 
-## 🔒 Security & Best Practices
-
--   **Gmail OAuth2**: Career-Orbit uses official Google OAuth2 protocols (`credentials.json`) for secure email drafting.
--   **Rate Limiting**: Automated delays and system-status checks prevent IP flagging and API quota exhaustion.
--   **Local Intelligence**: All your application data and personal documents remain on your local filesystem.
-
----
-
-## 🤝 Contributing
-
-We welcome contributions to broaden Career-Orbit's capabilities. 
-1. Fork the Project.
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`).
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`).
-4. Push to the Branch (`git push origin feature/AmazingFeature`).
-5. Open a Pull Request.
-
----
-
-*Career-Orbit — Transforming the job hunt from a full-time job into a background process.*
+*Career-Orbit — Leveling the global job market through open-source intelligence.*
