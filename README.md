@@ -1,91 +1,119 @@
-# 🚀 Career-Orbit: The Autonomous Agentic Job Portal
+# Career-Orbit 🚀
+### *The Next-Gen Autonomous AI Agentic Job Search Engine*
 
-**Career-Orbit** is a state-of-the-art, multi-agent AI pipeline designed to automate the high-volume outreach phase of internship and entry-level job hunting. Powered by **Groq-hosted open-source models** and orchestrated through a premium **Next.js Dashboard**, it transforms the tedious process of job searching into a streamlined, autonomous operation.
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![Python](https://img.shields.io/badge/Python-3.10+-blue?style=for-the-badge&logo=python)](https://www.python.org/)
+[![Groq](https://img.shields.io/badge/Groq-LPU_Powered-orange?style=for-the-badge)](https://groq.com/)
+[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
----
-
-## 🛠️ The Agentic Architecture
-
-Career-Orbit utilizes a specialized team of three AI agents that work in sequence to find, evaluate, and apply for roles:
-
-1.  **🔍 The Scout**: Scans 15+ major job boards (instahyre, wellfound, linkedin, etc.) using broad, high-signal queries. It filters out senior roles and identifies potential matches for students and junior engineers.
-2.  **🏗️ The Architect**: Performs a deep-dive analysis of each job description. It scores the role against your specific resume, tech stack, and publications, ensuring a high-quality match.
-3.  **✍️ The Ghostwriter**: Drafts personalized, high-impact cold emails. It uses a "Gen-Z Professional" tone, respects a strict 100-word limit, and ensures professional formatting with double-newline spacing.
+**Career-Orbit** is a sophisticated multi-agent system designed to automate the most time-consuming aspects of the job hunt: lead discovery, technical alignment review, and personalized outreach. By leveraging the speed of Groq's LPU and the flexibility of AgentScope, Career-Orbit acts as a full-time, autonomous career agent on your desktop.
 
 ---
 
-## ✨ Key Features
+## 🏛️ System Architecture
 
--   **Autonomous Pipeline**: Full end-to-end automation from lead discovery to Gmail draft creation.
--   **Premium Dashboard**: A modern, glassmorphism-inspired interface to monitor agent status, progress, and logs in real-time.
--   **Broad Search Discovery**: Targets major platforms including Indeed, Glassdoor, Internshala, and corporate career portals (Greenhouse, Lever, Ashby).
--   **Real-time CLI Terminal**: Integrated log viewer in the dashboard to watch the agents' decision-making process live.
--   **Smart Tracker**: Automatically records every discovery and outreach in a local `tracker.csv` for easy management.
+Career-Orbit operates on a distributed multi-agent architecture where specialized AI entities collaborate in a strictly governed pipeline.
+
+### 🧠 The Core Agent Team
+
+| Agent | Responsibility | Core Logic |
+| :--- | :--- | :--- |
+| **🔍 Scout** | **Market Intelligence** | Scans 15+ job boards using recursive search queries. Filters for entry-level/intern roles in India & Remote. |
+| **🏗️ Architect** | **Technical Alignment** | Scores JDs against CV using RAG-like matching. Evaluates tech stack, publications, and proof-of-work. |
+| **✍️ Ghostwriter** | **Strategic Outreach** | Crafts personalized cold emails with "Gen-Z Professional" tone. Enforces strict word limits and professional formatting. |
+| **🤖 Assistant** | **User Interaction** | Real-time chat assistant inside the dashboard to answer system queries and provide hunt insights. |
+
+### 🛠️ The Pipeline Workflow
+1.  **Discovery Phase**: Scout gathers raw URLs from Instahyre, Wellfound, LinkedIn, and Career Portals.
+2.  **Filtration Phase**: LLM-based first-pass filtering removes mismatched roles (Senior/Managerial).
+3.  **Deep Review**: Architect scores roles (0-10) based on `config.py` and your `resume.pdf`.
+4.  **Drafting**: Ghostwriter generates highly specific email drafts using Gmail API.
+5.  **Tracking**: Real-time logging to `tracker.csv` and `agent_status.json`.
 
 ---
 
-## 🚀 Quick Start
+## 🖥️ Career-Orbit Dashboard (Next.js)
 
-### 1. Prerequisites
--   **Python 3.10+**
--   **Node.js 18+**
--   **Groq API Key**: For lightning-fast AI inference.
--   **Gmail API Credentials**: `credentials.json` from Google Cloud Console.
+The project includes a premium, glassmorphism-inspired command center built with **Next.js 15**.
 
-### 2. Environment Setup
-Create a `.env` file in the root directory:
+-   **Autonomous Control**: Side-by-side Start/Stop controls with immediate process state verification.
+-   **Live CLI Terminal**: A high-fidelity log viewer that streams agent decision-making logic.
+-   **Progress Analytics**: Visual tracking of search depth and mailing throughput.
+-   **Application Tracker**: A managed UI to update application statuses (Mailed, Interview, Accepted) directly to the CSV.
+
+---
+
+## 📂 Project Structure
+
 ```bash
-GROQ_API_KEY=your_key_here
-RESUME_PATH=/path/to/your_resume.pdf
-CV_PATH=/path/to/your_cv.pdf
-TRACKER_CSV_PATH=/path/to/Careerorbit/tracker.csv
+Careerorbit/
+├── app/                # Next.js 15 Dashboard (Frontend)
+│   ├── api/            # Backend API Routes (Agent & Job Management)
+│   └── globals.css     # Premium UI Design System
+├── agents.py           # Multi-Agent Definitions (AgentScope)
+├── job_hunter.py       # Main Pipeline Orchestration
+├── tools.py            # Low-level Tools (Search, Scrape, Gmail, Playwright)
+├── config.py           # Central Configuration & Target Parameters
+├── tracker.csv         # Persistent Application Database
+└── .env                # Secure Environment Configuration
 ```
 
-### 3. Installation
+---
+
+## ⚡ Installation & Deployment
+
+### 1. Python Environment
 ```bash
-# Install Python dependencies
 python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-
-# Install Dashboard dependencies
-npm install
+playwright install chromium
 ```
 
-### 4. Running the System
+### 2. Frontend Setup
 ```bash
-# Start the Dashboard
+npm install
 npm run dev
 ```
-Navigate to `http://localhost:3000` to access the **Career-Orbit Command Center**.
+
+### 3. API Configuration
+Ensure your `.env` contains:
+- `GROQ_API_KEY`: Groq Cloud API Key.
+- `RESUME_PATH`: Absolute path to your resume PDF.
+- `TRACKER_CSV_PATH`: Path to the local `tracker.csv`.
 
 ---
 
-## 🕹️ Dashboard Controls
+## ⚙️ Advanced Configuration
 
--   **Start Button**: Initializes the agentic pipeline in the background. It checks for stale processes and ensures a fresh run every time.
--   **Stop Button**: Immediately terminates the agent using `SIGKILL` to prevent resource leaks.
--   **Execution Pipeline**: A visual map showing exactly which phase the agent is currently executing (Scouting, Reviewing, or Mailing).
--   **Stats Grid**: Real-time breakdown of Total Leads, Mails Sent, and Application Statuses.
+### Broadening the Search Funnel
+In `config.py`, you can modify `TARGET_SITES` and `SEARCH_QUERIES`. The system is currently optimized for:
+-   **Roles**: AI/ML, Data Science, Python, Research.
+-   **Level**: Internships, Junior, Associate.
+-   **Window**: Last 15 days.
 
----
-
-## ⚙️ Configuration
-
-You can fine-tune the agents in `config.py`:
--   **SEARCH_QUERIES**: Broaden or narrow your target roles.
--   **TARGET_SITES**: Add or remove specific job boards.
--   **WORK_HOURS**: Restrict the agent to run only during professional hours (default 9 AM - 5 PM).
+### Outreach Strategy
+The **Ghostwriter** is programmed to use a professional yet modern tone. You can adjust the signature and proof-of-work highlights in `agents.py` to match your personal brand.
 
 ---
 
-## 🔒 Privacy & Security
+## 🔒 Security & Best Practices
 
--   **Local Data**: Your `tracker.csv` and logs stay on your machine.
--   **No Passwords**: Uses Google OAuth2 (`token.json`) for secure Gmail access—no passwords required.
--   **Rate Limiting**: Includes safety buffers to respect API quotas and prevent automated detection.
+-   **Gmail OAuth2**: Career-Orbit uses official Google OAuth2 protocols (`credentials.json`) for secure email drafting.
+-   **Rate Limiting**: Automated delays and system-status checks prevent IP flagging and API quota exhaustion.
+-   **Local Intelligence**: All your application data and personal documents remain on your local filesystem.
 
 ---
 
-**Built with ❤️ for the next generation of engineers.**
-*Career-Orbit — Automating your journey to the stars.*
+## 🤝 Contributing
+
+We welcome contributions to broaden Career-Orbit's capabilities. 
+1. Fork the Project.
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`).
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`).
+4. Push to the Branch (`git push origin feature/AmazingFeature`).
+5. Open a Pull Request.
+
+---
+
+*Career-Orbit — Transforming the job hunt from a full-time job into a background process.*
