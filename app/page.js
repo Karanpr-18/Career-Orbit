@@ -435,9 +435,8 @@ export default function JobHuntApp() {
             <section className="agent-center">
               <div className="agent-grid">
                 {/* Agent Status Card */}
-                <div className="agent-card status-card flex flex-col md:flex-row gap-8 items-stretch">
-                  <div className="flex-1">
-                  <div className="agent-card-header">
+                <div className="agent-card status-card">
+                  <div className="flex items-center gap-3 mb-6">
                     <Bot size={24} className="text-accent" />
                     <h3>Agent Status</h3>
                     <span className={`status-indicator ${agentStatus.status}`}>
@@ -445,7 +444,7 @@ export default function JobHuntApp() {
                     </span>
                   </div>
                   
-                  <div className="agent-metrics">
+                  <div className="agent-metrics mb-6">
                     <div className="metric">
                       <span className="label">Current Phase</span>
                       <span className="value">{agentStatus.step}</span>
@@ -456,7 +455,7 @@ export default function JobHuntApp() {
                     </div>
                   </div>
 
-                  <div className="progress-container">
+                  <div className="progress-container mb-8">
                     <div className="progress-header">
                       <span>Mailing Progress</span>
                       <span>{agentStatus.progress.done} / {agentStatus.progress.total}</span>
@@ -467,39 +466,27 @@ export default function JobHuntApp() {
                         style={{ width: `${(agentStatus.progress.done / agentStatus.progress.total) * 100}%` }}
                       />
                     </div>
-                    </div>
                   </div>
 
-                  <div className="flex flex-row gap-4 justify-end items-center min-w-[280px]">
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', width: '100%', marginTop: '1.5rem' }}>
                     <button 
-                      className={`btn-initialize ${agentStatus.status === 'running' ? 'disabled' : ''}`}
+                      className={`btn-control btn-start ${agentStatus.status === 'running' ? 'disabled' : ''}`}
                       onClick={initializeAgent}
                       disabled={agentStatus.status === 'running' || isInitializing}
+                      style={{ flex: 1, minWidth: '140px' }}
                     >
-                      {isInitializing ? (
-                        <Loader2 className="spin" size={20} />
-                      ) : agentStatus.status === 'running' ? (
-                        'Agent Active'
-                      ) : (
-                        <>
-                          <Play size={20} /> Initialize
-                        </>
-                      )}
+                      {isInitializing ? <Loader2 className="spin" size={18} /> : <Play size={18} />}
+                      <span>Start</span>
                     </button>
 
                     <button 
-                      className={`btn-stop ${agentStatus.status !== 'running' ? 'disabled' : 'shadow-premium pulse-red'}`}
+                      className={`btn-control btn-stop-compact ${agentStatus.status !== 'running' ? 'disabled' : 'pulse-red'}`}
                       onClick={stopAgent}
                       disabled={agentStatus.status !== 'running' || isStopping}
-                      title="Stop Agent Execution"
+                      style={{ flex: 1, minWidth: '140px' }}
                     >
-                      {isStopping ? (
-                        <Loader2 className="spin" size={20} />
-                      ) : (
-                        <>
-                          <X size={20} /> Stop Agent
-                        </>
-                      )}
+                      {isStopping ? <Loader2 className="spin" size={18} /> : <X size={18} />}
+                      <span>Stop</span>
                     </button>
                   </div>
                 </div>
