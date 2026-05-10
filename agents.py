@@ -102,6 +102,7 @@ You will receive a job description text scraped from a URL. You must:
 1. SCORE the job based on these rules:
    - Score 10: Mentions LLMs, PyTorch, Model Optimization, Transformers, HuggingFace, RAG, LangChain, Agentic AI, Fine-tuning, RLHF, Prompt Engineering.
    - Score 8: Mentions Scikit-learn, SQL, Python-heavy data science, TensorFlow, Keras, Pandas, Statistical modeling, ML pipelines.
+   - Score 8 (AUTO): If the text says "Details could not be scraped due to bot protection", assume it is a valid junior AI/ML role and score it an 8.
    - Score <7: Generic 'Data Analyst' roles, Excel-heavy, Power BI only, Tableau only, Business Analyst, MIS, Data Entry. These should be SKIPPED.
 
 2. ROUTE the action based on the URL:

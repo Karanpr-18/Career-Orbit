@@ -103,8 +103,28 @@ def scrape_job_page(url: str) -> str:
         return clean_text
 
     except Exception as e:
-        logger.error(f"[Architect] Failed to scrape {url}: {e}")
-        return f"ERROR: Could not scrape page – {e}"
+        logger.warning(f"[Architect] Requests failed for {url}: {e}. Trying Playwright fallback...")
+        try:
+            from playwright.sync_api import sync_playwright
+            with sync_playwright() as p:
+                browser = p.chromium.launch(headless=True)
+                page = browser.new_page()
+                page.goto(url, wait_until="domcontentloaded", timeout=20000)
+                time.sleep(2)
+                text = page.inner_text("body")
+                browser.close()
+                
+                # Clean up excessive whitespace
+                lines = [line.strip() for line in text.splitlines() if line.strip()]
+                clean_text = "\n".join(lines)
+                if len(clean_text) > 4000:
+                    clean_text = clean_text[:4000] + "\n... [truncated]"
+                
+                logger.info(f"[Architect] Playwright fallback successful for {url[:60]}")
+                return clean_text
+        except Exception as pe:
+            logger.error(f"[Architect] Playwright fallback also failed for {url}: {pe}")
+            return f"ERROR: Could not scrape page – {e}"
 
 
 # ──────────────────────────────────────────────

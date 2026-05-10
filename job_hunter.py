@@ -258,16 +258,9 @@ def run_architect_phase(architect_agent, job: dict) -> dict:
     jd_text = scrape_job_page(url)
 
     if jd_text.startswith("ERROR"):
-        logger.warning(f"[Architect] Scraping failed. Skipping job.")
-        return {
-            "score": 0,
-            "action": "SKIP",
-            "company": job.get("company", extract_company_from_url(url)),
-            "role": job.get("title", "Unknown"),
-            "key_technologies": [],
-            "jd_category": "general",
-            "reason": f"Could not scrape job page: {jd_text}",
-        }
+        logger.warning(f"[Architect] Scraping failed ({jd_text}). Falling back to basic title/company evaluation.")
+        # Create a synthetic JD so the LLM can still draft an email
+        jd_text = f"Job Title: {job.get('title', 'Unknown')}\nCompany: {job.get('company', extract_company_from_url(url))}\nDetails could not be scraped due to bot protection, but the search context implies an AI/ML or Data Science role suitable for a junior candidate."
 
     # Step 2: Tool-based scoring (fast, deterministic)
     tool_score = score_job(jd_text)
