@@ -74,8 +74,9 @@ SEARCH QUERIES to use:
 - "Deep Learning Intern India"
 
 STRICT FILTERS:
-- ONLY internships and entry-level roles. Reject senior, lead, manager, or staff roles.
-- ONLY roles posted in the last 10 days.
+- INCLUDE: Internships, Junior roles, Associate roles, and Entry-level positions.
+- EXCLUDE: Senior, Lead, Manager, Staff, or Principal roles (e.g., 3+ years experience).
+- ONLY roles posted in the last 15 days.
 - ONLY roles based in India or remote-friendly for India.
 
 OUTPUT FORMAT:

@@ -200,8 +200,8 @@ def run_scout_phase(scout_agent, existing_urls: set) -> list[dict]:
         search_summary = json.dumps(chunk, indent=1)
         
         scout_prompt = (
-            f"Filter these job postings to ONLY keep AI/ML/Data Science INTERNSHIP roles in India. "
-            f"Exclude senior/full-time jobs. Return a JSON array with 'title', 'url', and 'company'.\n\n"
+            f"Filter these job postings to ONLY keep AI/ML/Data Science roles suitable for a student or junior (Internships, Junior, Associate). "
+            f"Exclude Senior/Lead roles with 3+ years experience. Return a JSON array with 'title', 'url', and 'company'.\n\n"
             f"Results:\n{search_summary}"
         )
         
@@ -624,14 +624,10 @@ def run_pipeline(force: bool = False, dry_run: bool = False):
             # Add to existing URLs to prevent re-processing
             existing_urls.add(url)
             
-            # Only count as 'done' if actually applied or mailed
-            success_statuses = ["Mailed", "Applied", "Dry Run"]
-            if result.get("application_status") in success_statuses:
-                processed_count += 1
-                write_status(step="Mailing", done=processed_count, total=len(jobs))
-            else:
-                # Still update status but don't increment 'done' count for the progress bar
-                write_status(step=f"Filtering ({analysis['action']})", done=processed_count, total=len(jobs))
+            # Update progress for every job in the list
+            current_progress = i + 1
+            status_step = f"Phase: {analysis.get('action', 'Skip')}"
+            write_status(step=status_step, done=current_progress, total=len(jobs))
 
         except Exception as e:
             logger.error(f"❌ Error processing job {url}: {e}", exc_info=True)

@@ -39,14 +39,16 @@ WORK_HOURS_END = int(os.getenv("WORK_HOURS_END", "17"))
 # Job Search Queries
 # ──────────────────────────────────────────────
 SEARCH_QUERIES = [
-    "AI Engineer Intern India",
-    "ML Intern India",
-    "Data Science Intern India",
-    "Machine Learning Intern India",
-    "GenAI Intern India",
+    "AI ML Internship India",
+    "Junior Machine Learning Engineer India",
+    "Junior AI Engineer India",
+    "Data Scientist Intern India",
+    "Associate AI Developer India",
+    "Generative AI Intern India",
+    "Python AI developer entry level India",
+    "Machine Learning research intern India",
     "Deep Learning Intern India",
-    "NLP Intern India",
-    "LLM Engineer Intern India",
+    "AI Software Engineer Junior India",
 ]
 
 TARGET_SITES = [
@@ -58,12 +60,16 @@ TARGET_SITES = [
     "greenhouse.io",
     "lever.co",
     "workatastartup.com",
+    "internshala.com",
+    "angel.co",
+    "simplyhired.co.in",
+    "indeed.com",
+    "glassdoor.co.in",
+    "careerjet.co.in",
+    "foundit.in",
     "ashbyhq.com",
     "bamboohr.com",
     "smartrecruiters.com",
-    "jobvite.com",
-    "internshala.com",
-    "angel.co",
 ]
 
 # Sites that typically require login – skip form filling, email instead
