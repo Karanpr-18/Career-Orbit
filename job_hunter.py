@@ -386,14 +386,14 @@ def run_ghostwriter_phase(ghostwriter_agent, analysis: dict) -> dict:
 def _fallback_email(analysis: dict) -> str:
     """Generate a simple fallback email if the Ghostwriter LLM fails."""
     return f"""Subject: {analysis['role']} @ {analysis['company']} – Karan Bhoriya
-
-Hi,
-
-I'm Karan, a B.Tech AIML student. I saw the {analysis['role']} opening and had to reach out.
-
-I've built 10+ AI projects, including a PyTorch LSTM model from scratch. Most notably, during my Humana internship, I built Python pipelines that cut QA time by 95% (4 days to 2 hours).
-
-I'd love to bring that same focus on efficiency to {analysis['company']}. My links are below.
+ 
+ Hi,
+ 
+ I'm Karan, a B.Tech AIML student specializing in Agentic AI and GenAI. I saw the {analysis['role']} opening and had to reach out.
+ 
+ I've built end-to-end LLM platforms like TalentAI and autonomous agents like Career-Orbit. During my Humana internship, I also engineered Python pipelines that cut QA time by 95% (4 days to 2 hours).
+ 
+ I'd love to bring that same focus on GenAI efficiency to {analysis['company']}. My links are below.
 
 Best,
 Karan Bhoriya

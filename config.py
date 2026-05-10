@@ -196,9 +196,9 @@ KARAN_PROFILE = {
             "name": "TalentAI",
             "desc": "end-to-end recruitment platform using Python, Flask, Groq Llama 3.1, and Gemini Pro for resume parsing",
         },
-        "deep_learning": {
-            "name": "Next Word Prediction",
-            "desc": "built from scratch in PyTorch with custom LSTM architecture",
+        "agentic-ai": {
+            "name": "Career-Orbit",
+            "desc": "multi-agent autonomous job search engine using AgentScope and Groq's multiple models",
         },
         "data_pipelines": {
             "name": "Humana Data Analyst Internship",
