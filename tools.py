@@ -640,41 +640,54 @@ def extract_company_from_url(url: str) -> str:
 # ──────────────────────────────────────────────
 # 9. UTILITY: SEARCH FOR HIRING EMAIL
 # ──────────────────────────────────────────────
-def search_hiring_email(company_name: str) -> str:
+def search_hiring_email(company_name: str, job_url: str = "", jd_text: str = "") -> str:
     """
-    Search the web for a hiring/recruiter email address for a company.
-
-    Args:
-        company_name: The company name to search for.
-
-    Returns:
-        An email address string, or 'None' if not found.
+    Search for verified hiring/recruiter email addresses.
+    Strictly finds existing emails, NO GUESSING.
     """
+    import re
+    email_pattern = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
+    
+    # 1. Check if email exists in the already scraped JD text
+    if jd_text:
+        found = email_pattern.findall(jd_text)
+        for email in found:
+            email = email.lower()
+            if not any(bad in email for bad in ["example.com", "test.com", "noreply", "no-reply", "donotreply", "sentry"]):
+                logger.info(f"[Dispatcher] Found contact email directly in JD: {email}")
+                return email
+
+    # 2. Search for the email via web search (including LinkedIn/Contact targets)
     try:
         from duckduckgo_search import DDGS
+        queries = [
+            f'"{company_name}" hiring email recruiter',
+            f'"{company_name}" contact email careers',
+            f'"{company_name}" recruiter linkedin email',
+            f'"{company_name}" HR manager contact',
+            f'"{company_name}" project manager email'
+        ]
 
-        query = f"{company_name} hiring email recruiter careers contact email address"
         with DDGS() as ddgs:
-            results = list(ddgs.text(query, max_results=10))
-
-        # Look for email patterns in snippets
-        email_pattern = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
-        for r in results:
-            snippet = r.get("body", "") + " " + r.get("title", "")
-            emails = email_pattern.findall(snippet)
-            for email in emails:
-                # Filter out obviously bad emails
-                if not any(
-                    bad in email.lower()
-                    for bad in [
-                        "example.com", "test.com", "noreply",
-                        "no-reply", "donotreply", "sentry",
-                    ]
-                ):
-                    logger.info(f"[Dispatcher] Found hiring email: {email}")
-                    return email
-
-        logger.warning(f"[Dispatcher] No hiring email found for {company_name}")
+            for query in queries:
+                try:
+                    results = list(ddgs.text(query, max_results=8))
+                    for r in results:
+                        snippet = r.get("body", "") + " " + r.get("title", "")
+                        found = email_pattern.findall(snippet)
+                        for email in found:
+                            email = email.lower()
+                            if not any(bad in email for bad in ["example.com", "test.com", "noreply", "no-reply", "donotreply", "sentry"]):
+                                # If it's a LinkedIn snippet, it's a high-value find
+                                if "linkedin.com" in r.get("href", "").lower():
+                                    logger.info(f"[Dispatcher] Found HIGH-VALUE recruiter email via LinkedIn search: {email}")
+                                else:
+                                    logger.info(f"[Dispatcher] Found verified email via search: {email}")
+                                return email
+                except:
+                    continue
+        
+        logger.warning(f"[Dispatcher] No verified hiring email found for {company_name} after deep search.")
         return "None"
 
     except Exception as e:

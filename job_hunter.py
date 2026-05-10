@@ -299,9 +299,10 @@ def run_architect_phase(architect_agent, job: dict) -> dict:
             "key_technologies": llm_analysis.get("key_technologies", []),
             "jd_category": llm_analysis.get("jd_category", "general"),
             "reason": llm_analysis.get("reason", "LLM analysis"),
+            "jd_text": jd_text,
         }
-        # Enforce: if score < 7, action MUST be SKIP
-        if result["score"] < 7:
+        # Enforce: if score < 6, action MUST be SKIP
+        if result["score"] < 6:
             result["action"] = "SKIP"
     else:
         # Fallback to pure tool-based results
@@ -313,6 +314,7 @@ def run_architect_phase(architect_agent, job: dict) -> dict:
             "key_technologies": [],
             "jd_category": "general",
             "reason": "Tool-based scoring (LLM unavailable)",
+            "jd_text": jd_text,
         }
 
     logger.info(f"[Architect] Score: {result['score']}, Action: {result['action']}, "
@@ -476,7 +478,7 @@ def run_dispatcher_phase(
     # ── ACTION: SKIP_TO_EMAIL ──
     if action == "SKIP_TO_EMAIL":
         # Search for a hiring email
-        hiring_email = search_hiring_email(company)
+        hiring_email = search_hiring_email(company, job_url, analysis.get("jd_text", ""))
 
         if hiring_email and hiring_email != "None":
             if dry_run:
