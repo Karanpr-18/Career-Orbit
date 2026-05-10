@@ -31,18 +31,22 @@ export async function POST() {
       try {
         const data = JSON.parse(fs.readFileSync(STATUS_PATH, 'utf-8'));
         if (data.status === 'running' && data.pid) {
-          // Check if process actually exists
           try {
-            process.kill(data.pid, 0); // signal 0 just checks existence
+            process.kill(data.pid, 0); // Check if process exists
+            console.log(`--- AGENT START BLOCKED: Process ${data.pid} is still active.`);
             return NextResponse.json({ success: false, error: 'Agent is already running' }, { status: 400 });
           } catch (e) {
-            // Process doesn't exist, we can proceed
+            console.log(`--- STALE PID DETECTED: ${data.pid}. Clearing and proceeding...`);
           }
         }
       } catch (e) {
-        // Corrupt JSON or missing PID, proceed
+        console.log('--- ERROR PARSING STATUS FILE:', e.message);
       }
     }
+
+    console.log('--- STARTING AGENT...');
+    console.log('--- DIR:', AGENT_DIR);
+    console.log('--- PYTHON:', VENV_PYTHON);
 
     // Start agent as detached process
     const child = spawn(VENV_PYTHON, ['job_hunter.py', '--force'], {
