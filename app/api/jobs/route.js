@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
+export const dynamic = 'force-dynamic';
 import fs from 'fs';
 import path from 'path';
 import Papa from 'papaparse';
 
-const CSV_PATH = path.join(process.cwd(), 'tracker.csv');
+const CSV_PATH = process.env.TRACKER_CSV_PATH || path.join(process.cwd(), 'tracker.csv');
 
 function getCsvData() {
   if (!fs.existsSync(CSV_PATH)) {
@@ -14,9 +15,8 @@ function getCsvData() {
   const results = Papa.parse(fileContent, {
     header: true,
     skipEmptyLines: true,
-    quoteChar: "'", // Original uses single quotes
-    transformHeader: (header) => header.replace(/^['"]+|['"]+$/g, ''),
-    transform: (value) => value.replace(/^['"]+|['"]+$/g, ''),
+    transformHeader: (header) => header.replace(/^['"]+|['"]+$/g, '').trim(),
+    transform: (value) => value.replace(/^['"]+|['"]+$/g, '').trim(),
   });
 
   let data = results.data;
