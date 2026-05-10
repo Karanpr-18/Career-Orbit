@@ -569,6 +569,10 @@ def run_pipeline(force: bool = False, dry_run: bool = False):
     scout = create_scout_agent()
     architect = create_architect_agent()
     ghostwriter = create_ghostwriter_agent()
+    
+    logger.info(f"🔍 Architect Model: {architect.model}")
+    logger.info(f"✍️ Ghostwriter Model: {ghostwriter.model}")
+    
     # Dispatcher is tool-driven, not a separate LLM agent in execution
     logger.info("✅ All agents created")
     write_status(step="Starting Pipeline", done=0)

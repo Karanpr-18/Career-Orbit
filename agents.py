@@ -28,22 +28,39 @@ class LiteLLMAgent:
     def __call__(self, msg: Msg) -> Msg:
         self.memory.append({"role": "user", "content": msg.content})
         
-        # Groq API call via litellm
-        response = litellm.completion(
-            model=self.model,
-            messages=self.memory,
-            api_key=os.environ.get("GROQ_API_KEY")
-        )
+        # Groq API call via litellm with custom retry logic for resilience
+        max_retries = 3
+        retry_delay = 5  # seconds
         
-        reply_text = response.choices[0].message.content
-        
-        if self.use_memory:
-            self.memory.append({"role": "assistant", "content": reply_text})
-        else:
-            # Drop user message if no memory
-            self.memory.pop()
-            
-        return Msg(name=self.name, content=reply_text, role="assistant")
+        for attempt in range(max_retries):
+            try:
+                response = litellm.completion(
+                    model=self.model,
+                    messages=self.memory,
+                    api_key=os.environ.get("GROQ_API_KEY"),
+                    num_retries=2 # LiteLLM internal retries
+                )
+                
+                reply_text = response.choices[0].message.content
+                
+                if self.use_memory:
+                    self.memory.append({"role": "assistant", "content": reply_text})
+                else:
+                    self.memory.pop()
+                    
+                return Msg(name=self.name, content=reply_text, role="assistant")
+                
+            except litellm.RateLimitError as e:
+                if attempt < max_retries - 1:
+                    wait_time = retry_delay * (attempt + 1)
+                    logger.warning(f"[{self.name}] Rate limit hit. Retrying in {wait_time}s... (Attempt {attempt+1}/{max_retries})")
+                    time.sleep(wait_time)
+                else:
+                    logger.error(f"[{self.name}] Max retries reached for rate limit.")
+                    raise e
+            except Exception as e:
+                logger.error(f"[{self.name}] LLM call failed: {e}")
+                raise e
 
 
 from config import KARAN_PROFILE
