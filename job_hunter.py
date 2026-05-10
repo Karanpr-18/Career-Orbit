@@ -166,13 +166,13 @@ def run_scout_phase(scout_agent, existing_urls: set) -> list[dict]:
     # Step 1: Run web searches for each query + site combination
     for query in SEARCH_QUERIES:
         # Search across all sites
-        results = web_search_jobs(query, max_results=15)
+        results = web_search_jobs(query, max_results=30)
         all_raw_results.extend(results)
 
         # Also search specific target sites
-        for site in TARGET_SITES[:5]:  # Top 5 sites
+        for site in TARGET_SITES[:8]:  # Increased to top 8 sites
             site_query = f"{query} site:{site}"
-            results = web_search_jobs(site_query, max_results=10)
+            results = web_search_jobs(site_query, max_results=20)
             all_raw_results.extend(results)
 
     # Step 2: Deduplicate by URL
@@ -650,7 +650,9 @@ def run_pipeline(force: bool = False, dry_run: bool = False):
         # ── Rate limiting: ONLY if mail was sent or application succeeded ──
         if i < len(jobs) - 1:
             success_statuses = ["Mailed", "Applied", "Dry Run"]
-            if results_summary and results_summary[-1].get("application_status") in success_statuses:
+            is_success = results_summary and results_summary[-1].get("application_status") in success_statuses
+            
+            if is_success and DELAY_BETWEEN_APPLICATIONS > 0:
                 logger.info(f"\n⏳ Cooling off for {DELAY_BETWEEN_APPLICATIONS // 60} minutes "
                             f"before next application...")
                 
@@ -662,7 +664,7 @@ def run_pipeline(force: bool = False, dry_run: bool = False):
 
                 time.sleep(DELAY_BETWEEN_APPLICATIONS)
             else:
-                logger.info("[Pipeline] No wait needed – moving directly to next lead.")
+                logger.info("[Pipeline] Moving directly to next lead.")
 
     # ── SUMMARY ──
     logger.info(f"\n{'═' * 60}")

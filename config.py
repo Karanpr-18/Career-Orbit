@@ -58,8 +58,12 @@ TARGET_SITES = [
     "greenhouse.io",
     "lever.co",
     "workatastartup.com",
-    "angel.co",
+    "ashbyhq.com",
+    "bamboohr.com",
+    "smartrecruiters.com",
+    "jobvite.com",
     "internshala.com",
+    "angel.co",
 ]
 
 # Sites that typically require login – skip form filling, email instead
