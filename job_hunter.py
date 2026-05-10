@@ -348,6 +348,7 @@ def run_ghostwriter_phase(ghostwriter_agent, analysis: dict) -> dict:
         "role": analysis["role"],
         "key_technologies": analysis.get("key_technologies", []),
         "jd_category": analysis.get("jd_category", "general"),
+        "reason": analysis.get("reason", ""),
         "recruiter_name": "",  # Will be filled if found
     }
 
@@ -389,15 +390,15 @@ def run_ghostwriter_phase(ghostwriter_agent, analysis: dict) -> dict:
 
 def _fallback_email(analysis: dict) -> str:
     """Generate a simple fallback email if the Ghostwriter LLM fails."""
-    return f"""Subject: Re: {analysis['role']} – Karan Bhoriya, B.Tech AIML
+    return f"""Subject: {analysis['role']} @ {analysis['company']} – Karan Bhoriya
 
 Hi,
 
-I'm Karan, a B.Tech CSE (AIML) student at Sushant University, reaching out about the {analysis['role']} role at {analysis['company']}.
+I'm Karan, a B.Tech AIML student. I saw the {analysis['role']} opening and had to reach out.
 
-I've built 10+ projects including TalentAI (an LLM-powered recruitment platform using Groq/Gemini/Flask) and a PyTorch Next Word Prediction model from scratch. At Humana, I cut QA pipeline time from 4 days to 2 hours with Python automation.
+I've built 10+ AI projects, including a PyTorch LSTM model from scratch. Most notably, during my Humana internship, I built Python pipelines that cut QA time by 95% (4 days to 2 hours).
 
-Would love to chat about how I can contribute. Links below.
+I'd love to bring that same focus on efficiency to {analysis['company']}. My links are below.
 
 Best,
 Karan Bhoriya
