@@ -1,8 +1,8 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "Job Hunt Hub | Management System",
-  description: "Track and manage your automated job applications with ease.",
+  title: "Career-Orbit | Agentic Job Portal",
+  description: "Your autonomous AI-powered job search and application engine.",
 };
 
 export default function RootLayout({ children }) {

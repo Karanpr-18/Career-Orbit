@@ -290,10 +290,10 @@ export default function JobHuntApp() {
                 <span className={`header-badge-dot ${agentStatus.status === 'running' ? 'pulse' : ''}`} />
                 {agentStatus.status === 'running' ? `Agent Active: ${agentStatus.step}` : 'System Idle'}
               </div>
-              <h1>{activeTab === 'dashboard' ? 'Job Hunt Hub' : 'Agent Command Center'}</h1>
+              <h1>{activeTab === 'dashboard' ? 'Career-Orbit' : 'Agent Command Center'}</h1>
               <p className="subtitle">
                 {activeTab === 'dashboard' 
-                  ? 'Track and manage your automated applications.' 
+                  ? 'Your Autonomous Agentic Job Portal.' 
                   : 'Orchestrate your AI-powered job search pipeline.'}
               </p>
             </div>
