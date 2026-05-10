@@ -435,7 +435,8 @@ export default function JobHuntApp() {
             <section className="agent-center">
               <div className="agent-grid">
                 {/* Agent Status Card */}
-                <div className="agent-card status-card">
+                <div className="agent-card status-card flex flex-col md:flex-row gap-8 items-stretch">
+                  <div className="flex-1">
                   <div className="agent-card-header">
                     <Bot size={24} className="text-accent" />
                     <h3>Agent Status</h3>
@@ -466,21 +467,22 @@ export default function JobHuntApp() {
                         style={{ width: `${(agentStatus.progress.done / agentStatus.progress.total) * 100}%` }}
                       />
                     </div>
+                    </div>
                   </div>
 
-                  <div className="flex gap-3 mt-6">
+                  <div className="flex flex-row gap-4 justify-end items-center min-w-[280px]">
                     <button 
-                      className={`btn-initialize flex-1 ${agentStatus.status === 'running' ? 'disabled' : ''}`}
+                      className={`btn-initialize ${agentStatus.status === 'running' ? 'disabled' : ''}`}
                       onClick={initializeAgent}
                       disabled={agentStatus.status === 'running' || isInitializing}
                     >
                       {isInitializing ? (
-                        <Loader2 className="spin" size={18} />
+                        <Loader2 className="spin" size={20} />
                       ) : agentStatus.status === 'running' ? (
                         'Agent Active'
                       ) : (
                         <>
-                          <Play size={18} /> Initialize
+                          <Play size={20} /> Initialize
                         </>
                       )}
                     </button>
@@ -492,10 +494,10 @@ export default function JobHuntApp() {
                       title="Stop Agent Execution"
                     >
                       {isStopping ? (
-                        <Loader2 className="spin" size={18} />
+                        <Loader2 className="spin" size={20} />
                       ) : (
                         <>
-                          <X size={18} /> Stop
+                          <X size={20} /> Stop Agent
                         </>
                       )}
                     </button>
