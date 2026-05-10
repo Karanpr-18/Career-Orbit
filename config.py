@@ -144,7 +144,7 @@ MODEL_CONFIGS = [
     {
         "config_name": "architect_model_config",
         "model_type": "litellm_chat",
-        "model_name": "groq/llama-3.3-70b-versatile",
+        "model_name": "groq/qwen-qwq-32b",
         "generate_args": {
             "temperature": 0.2,
             "max_tokens": 4096,
@@ -153,7 +153,7 @@ MODEL_CONFIGS = [
     {
         "config_name": "architect_fallback_model",
         "model_type": "litellm_chat",
-        "model_name": "groq/qwen-qwq-32b",
+        "model_name": "groq/llama-3.3-70b-versatile",
         "generate_args": {
             "temperature": 0.2,
             "max_tokens": 4096,
