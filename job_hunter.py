@@ -59,6 +59,17 @@ from tools import (
 )
 
 # ──────────────────────────────────────────────
+# COLOR CONSTANTS
+# ──────────────────────────────────────────────
+class Color:
+    GREEN = "\033[92m"
+    RED = "\033[91m"
+    CYAN = "\033[96m"
+    YELLOW = "\033[93m"
+    RESET = "\033[0m"
+    BOLD = "\033[1m"
+
+# ──────────────────────────────────────────────
 # STATUS REPORTING SETUP
 # ──────────────────────────────────────────────
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -85,7 +96,7 @@ os.makedirs(LOG_DIR, exist_ok=True)
 
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
+    format=f"{Color.GREEN}%(asctime)s [%(name)s] %(levelname)s: %(message)s{Color.RESET}",
     handlers=[
         logging.StreamHandler(sys.stdout),
         logging.FileHandler(
@@ -651,9 +662,9 @@ def run_pipeline(force: bool = False, dry_run: bool = False):
             url = job.get("url", "")
             if not url or url in existing_urls: continue
 
-            logger.info(f"\n{'═' * 60}")
-            logger.info(f"HUNTING [{successful_sends+1}/{target_apps}] | Checked: {total_checked} | Processing: {job.get('title', 'Unknown')}")
-            logger.info(f"{'═' * 60}")
+            logger.info(f"\n{Color.CYAN}{'═' * 60}{Color.RESET}")
+            logger.info(f"{Color.BOLD}{Color.GREEN}HUNTING [{successful_sends+1}/{target_apps}] | Checked: {total_checked} | Processing: {job.get('title', 'Unknown')}{Color.RESET}")
+            logger.info(f"{Color.CYAN}{'═' * 60}{Color.RESET}")
 
             try:
                 # PHASE 2: ARCHITECT – Evaluate & Route
@@ -675,7 +686,7 @@ def run_pipeline(force: bool = False, dry_run: bool = False):
                 
                 if is_sent:
                     successful_sends += 1
-                    logger.info(f"✨ SUCCESS! Progress: {successful_sends}/{target_apps}")
+                    logger.info(f"{Color.BOLD}{Color.GREEN}✨ SUCCESS! Progress: {successful_sends}/{target_apps}{Color.RESET}")
                 
                 # Update status for the dashboard with progress bar
                 write_status(
