@@ -20,8 +20,17 @@ tracker.csv
 logs/
 agent_status.json
 agent_logs.txt
+
+# Personal Documents
 my_cv.pdf
 my_resume.pdf
+*resume*
+*cv*
+*Resume*
+*CV*
+*.pdf
+*.docx
+*.doc
 
 # OS
 .DS_Store
