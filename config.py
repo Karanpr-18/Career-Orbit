@@ -144,7 +144,7 @@ MODEL_CONFIGS = [
     {
         "config_name": "architect_model_config",
         "model_type": "litellm_chat",
-        "model_name": "groq/openai/gpt-oss-120b",
+        "model_name": "groq/llama-3.3-70b-versatile",
         "generate_args": {
             "temperature": 0.2,
             "max_tokens": 4096,
@@ -162,7 +162,7 @@ MODEL_CONFIGS = [
     {
         "config_name": "ghostwriter_model_config",
         "model_type": "litellm_chat",
-        "model_name": "groq/llama-3.3-70b-versatile",
+        "model_name": "groq/openai/gpt-oss-120b",
         "generate_args": {
             "temperature": 0.7,
             "max_tokens": 2048,

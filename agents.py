@@ -10,6 +10,7 @@ Defines four agents:
 
 import json
 import logging
+import time
 from agentscope.message import Msg
 import litellm
 import os
@@ -33,12 +34,13 @@ class LiteLLMAgent:
         retry_delay = 5  # seconds
         
         for attempt in range(max_retries):
+            time.sleep(2)  # Enforce ~30 RPM limit
             try:
                 response = litellm.completion(
                     model=self.model,
                     messages=self.memory,
                     api_key=os.environ.get("GROQ_API_KEY"),
-                    num_retries=2 # LiteLLM internal retries
+                    num_retries=8 # LiteLLM internal retries for TPM backoffs
                 )
                 
                 reply_text = response.choices[0].message.content

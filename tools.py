@@ -23,41 +23,54 @@ from typing import Optional
 from urllib.parse import urlparse
 
 import requests
-from bs4 import BeautifulSoup
+import re
+from crawl4ai import WebCrawler
+from agents import LiteLLMAgent
+from agentscope.message import Msg
 
 logger = logging.getLogger("job_hunter.tools")
 
 # ──────────────────────────────────────────────
 # 1. WEB SEARCH (DuckDuckGo)
 # ──────────────────────────────────────────────
-def web_search_jobs(query: str, max_results: int = 20) -> list[dict]:
+def searxng_search(query: str) -> str:
     """
-    Search the web for job postings using DuckDuckGo.
-
-    Args:
-        query: The search query string (e.g., "AI Engineer Intern India site:greenhouse.io").
-        max_results: Maximum number of results to return.
-
-    Returns:
-        A list of dicts, each containing 'title', 'url', and 'snippet'.
+    Search the web for job postings using SearxNG.
+    Returns title and URL for the top 3 results.
     """
     try:
-        from ddgs import DDGS
-
-        results = []
-        with DDGS() as ddgs:
-            for r in ddgs.text(query, max_results=max_results):
-                results.append({
-                    "title": r.get("title", ""),
-                    "url": r.get("href", ""),
-                    "snippet": r.get("body", ""),
-                })
-        logger.info(f"[Scout] Found {len(results)} results for query: {query[:60]}...")
-        return results
-
+        url = "https://searx.be/search"
+        params = {"q": query, "format": "json"}
+        response = requests.get(url, params=params, timeout=15)
+        response.raise_for_status()
+        
+        data = response.json()
+        results = data.get("results", [])[:3]
+        
+        output = ""
+        for r in results:
+            output += f"Title: {r.get('title')}\nURL: {r.get('url')}\n\n"
+        
+        return output.strip()
     except Exception as e:
-        logger.error(f"[Scout] Web search failed for '{query}': {e}")
-        return []
+        logger.error(f"[Scout] SearxNG search failed: {e}")
+        return f"Error: {e}"
+
+
+def crawl_page(url: str) -> str:
+    """
+    Crawl a page using Crawl4AI to bypass bot protection.
+    Returns the first 2500 characters of markdown.
+    """
+    try:
+        crawler = WebCrawler()
+        crawler.warmup()
+        result = crawler.run(url=url, bypass_cache=True)
+        # Return first 2500 chars to stay within TPM limits
+        return result.markdown[:2500]
+    except Exception as e:
+        logger.error(f"[Architect] Crawl4AI failed for {url}: {e}")
+        return f"Error: {e}"
 
 
 # ──────────────────────────────────────────────
@@ -642,54 +655,80 @@ def extract_company_from_url(url: str) -> str:
 # ──────────────────────────────────────────────
 def search_hiring_email(company_name: str, job_url: str = "", jd_text: str = "") -> str:
     """
-    Search for verified hiring/recruiter email addresses.
-    Strictly finds existing emails, NO GUESSING.
+    Finds a hiring manager or recruiter email using a mini ReAct loop.
+    1. Initial regex check on JD.
+    2. LiteLLMAgent "Investigator" loop with SEARCH and READ tools.
     """
-    import re
     email_pattern = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
     
-    # 1. Check if email exists in the already scraped JD text
+    # 1. Initial Check
     if jd_text:
         found = email_pattern.findall(jd_text)
         for email in found:
             email = email.lower()
             if not any(bad in email for bad in ["example.com", "test.com", "noreply", "no-reply", "donotreply", "sentry"]):
-                logger.info(f"[Dispatcher] Found contact email directly in JD: {email}")
+                logger.info(f"[Investigator] Found contact email directly in JD: {email}")
                 return email
 
-    # 2. Search for the email via web search (including LinkedIn/Contact targets)
-    try:
-        from duckduckgo_search import DDGS
-        queries = [
-            f'"{company_name}" hiring email recruiter',
-            f'"{company_name}" contact email careers',
-            f'"{company_name}" recruiter linkedin email',
-            f'"{company_name}" HR manager contact',
-            f'"{company_name}" project manager email'
-        ]
+    # 2. Initialize Agent
+    investigator = LiteLLMAgent(
+        name="Investigator",
+        sys_prompt=(
+            f"You are an OSINT Investigator looking for the hiring manager or recruiter email of {company_name}. "
+            "You have two tools available:\n"
+            "- Action: SEARCH | Target: <query>\n"
+            "- Action: READ | Target: <url>\n\n"
+            "If you find the email, return ONLY the email address. "
+            "If you need more information, use one of the actions above. "
+            "Limit your reasoning and be concise."
+        ),
+        model_config_name="dispatcher_model_config", # Uses groq/qwen3-32b
+        use_memory=True
+    )
 
-        with DDGS() as ddgs:
-            for query in queries:
-                try:
-                    results = list(ddgs.text(query, max_results=8))
-                    for r in results:
-                        snippet = r.get("body", "") + " " + r.get("title", "")
-                        found = email_pattern.findall(snippet)
-                        for email in found:
-                            email = email.lower()
-                            if not any(bad in email for bad in ["example.com", "test.com", "noreply", "no-reply", "donotreply", "sentry"]):
-                                # If it's a LinkedIn snippet, it's a high-value find
-                                if "linkedin.com" in r.get("href", "").lower():
-                                    logger.info(f"[Dispatcher] Found HIGH-VALUE recruiter email via LinkedIn search: {email}")
-                                else:
-                                    logger.info(f"[Dispatcher] Found verified email via search: {email}")
-                                return email
-                except:
-                    continue
-        
-        logger.warning(f"[Dispatcher] No verified hiring email found for {company_name} after deep search.")
-        return "None"
+    # 3. The Loop
+    prompt = f"Find the verified hiring email for {company_name}. Job URL context: {job_url}"
+    msg = Msg(name="user", content=prompt, role="user")
 
-    except Exception as e:
-        logger.error(f"[Dispatcher] Email search failed: {e}")
-        return "None"
+    for i in range(3):
+        try:
+            reply = investigator(msg)
+            content = reply.content
+            
+            # Check if email is found and no more actions are requested
+            if "@" in content and "Action:" not in content:
+                found = email_pattern.search(content)
+                if found:
+                    email = found.group(0).lower()
+                    if not any(bad in email for bad in ["example.com", "test.com", "noreply", "no-reply", "donotreply", "sentry"]):
+                        logger.info(f"[Investigator] Verified email found after {i+1} steps: {email}")
+                        return email
+
+            # Parse and execute Actions
+            if "Action: SEARCH" in content:
+                # Extract target query
+                target = content.split("Target:")[1].split("\n")[0].strip()
+                logger.info(f"[Investigator] Step {i+1}: Searching for '{target}'")
+                observation = searxng_search(target)
+                msg = Msg(name="user", content=f"Search Results:\n{observation}", role="user")
+                
+            elif "Action: READ" in content:
+                # Extract target URL
+                target = content.split("Target:")[1].split("\n")[0].strip()
+                logger.info(f"[Investigator] Step {i+1}: Reading page {target}")
+                observation = crawl_page(target)
+                msg = Msg(name="user", content=f"Page Content (Markdown):\n{observation}", role="user")
+            
+            else:
+                # Fallback extraction if format is slightly off
+                found = email_pattern.search(content)
+                if found:
+                    return found.group(0).lower()
+                break
+                
+        except Exception as e:
+            logger.error(f"[Investigator] Loop error at step {i+1}: {e}")
+            break
+
+    logger.warning(f"[Investigator] No verified hiring email found for {company_name} after ReAct loop.")
+    return "Not Found"
