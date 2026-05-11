@@ -53,6 +53,8 @@ from tools import (
     gmail_draft_email,
     append_to_tracker,
     load_existing_urls,
+    count_successful_sends,
+    verify_email_with_emailable,
     extract_company_from_url,
     search_hiring_email,
     extract_cv_text,
@@ -431,11 +433,12 @@ Karan Bhoriya
 # ──────────────────────────────────────────────
 def run_dispatcher_phase(
     analysis: dict,
-    email_draft: dict,
     job_url: str,
+    ghostwriter=None,
+    architect=None,
     dry_run: bool = False,
     my_cv_text: str = "",
-) -> dict:
+) -> bool:
     """
     Execute the final action (apply via Playwright or draft email) and log to tracker.
 
@@ -512,13 +515,25 @@ def run_dispatcher_phase(
             logger.info(f"[Dispatcher] Score {analysis.get('score')} is moderate/low. Skipping Investigator to save credits.")
             hiring_email = "None"
 
-        if hiring_email and hiring_email != "None":
+        if hiring_email and "@" in hiring_email:
+            # ── EMAILABLE VERIFICATION ──
+            verification = verify_email_with_emailable(hiring_email)
+            if not verification["success"]:
+                logger.warning(f"[Dispatcher] ❌ Email {hiring_email} failed verification ({verification['state']}, Score: {verification['score']}). Skipping to avoid bounce.")
+                result["application_status"] = f"Skipped (Invalid Email: {verification['state']})"
+                return False
+                
             if dry_run:
                 result["portal_status"] = result.get("portal_status") or "Skipped (Portal)"
                 result["email_sent_to"] = hiring_email
                 result["application_status"] = "DRY RUN – Would draft email"
                 logger.info(f"[Dispatcher] DRY RUN – Would email {hiring_email}")
             else:
+                # TOKEN SAVING: Draft only AFTER verification
+                logger.info("[Dispatcher] Email verified. Drafting personalized message...")
+                email_draft_raw = run_ghostwriter_phase(ghostwriter, analysis, my_cv_text)
+                clean_body = run_compliance_check(architect, email_draft_raw["body"], my_cv_text)
+                email_draft = {"subject": email_draft_raw["subject"], "body": clean_body}
                 gmail_result = gmail_draft_email(
                     to_email=hiring_email,
                     subject=email_draft["subject"],
@@ -611,9 +626,11 @@ def run_pipeline(force: bool = False, dry_run: bool = False):
     logger.info(f"📊 Tracker has {len(existing_urls)} existing URLs")
 
     # ── Success-Targeted Hunting Strategy ──
-    successful_sends = 0
+    successful_sends = count_successful_sends()
     target_apps = 50
     total_checked = 0
+    
+    logger.info(f"📊 Resuming pipeline. Previous successful sends: {successful_sends}/{target_apps}")
 
     while successful_sends < target_apps:
         # Step 1: Scout for a batch of jobs
@@ -654,24 +671,10 @@ def run_pipeline(force: bool = False, dry_run: bool = False):
             logger.info(f"\n{'═' * 60}")
             logger.info(f"HUNTING [{successful_sends+1}/{target_apps}] | Checked: {total_checked} | Processing: {job.get('title', 'Unknown')}")
             logger.info(f"{'═' * 60}")
-
-            try:
-                # PHASE 2: ARCHITECT – Evaluate & Route
-                analysis = run_architect_phase(architect, job, MY_CV_TEXT)
-
-                # PHASE 3: GHOSTWRITER – Draft email
-                email_draft_raw = {"subject": "", "body": ""}
-                if analysis["action"] in ("SKIP_TO_EMAIL", "PLAYWRIGHT_APPLY"):
-                    email_draft_raw = run_ghostwriter_phase(ghostwriter, analysis, MY_CV_TEXT)
-                    
-                    # Task 2: Compliance Check
-                    clean_body = run_compliance_check(architect, email_draft_raw["body"], MY_CV_TEXT)
-                    email_draft = {"subject": email_draft_raw["subject"], "body": clean_body}
-                else:
-                    email_draft = email_draft_raw
-
-                # PHASE 4: DISPATCHER – Execute
-                is_sent = run_dispatcher_phase(analysis, email_draft, url, dry_run, MY_CV_TEXT)
+                    architect=architect,
+                    dry_run=dry_run,
+                    my_cv_text=MY_CV_TEXT
+                )
                 
                 if is_sent:
                     successful_sends += 1

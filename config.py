@@ -182,6 +182,14 @@ MODEL_CONFIGS = [
             "temperature": 0.1, 
         },
     },
+    {
+        "config_name": "smart_form_filler_fallback",
+        "model_type": "litellm_chat",
+        "model_name": "groq/qwen/qwen3-32b",
+        "generate_args": {
+            "temperature": 0.2,
+        },
+    },
 ]
 
 # ──────────────────────────────────────────────

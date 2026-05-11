@@ -25,29 +25,35 @@ litellm.drop_params = True
 litellm.model_list = [
     {
         "model_name": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
-        "litellm_params": {"model": "groq/qwen-2.5-coder-32b", "rpm": 30}
+        "litellm_params": {"model": "groq/qwen-2.5-coder-32b", "rpm": 30,"tpm":"30K", "tpd":"500K"}
     },
     {
         "model_name": "groq/qwen/qwen3-32b",
-        "litellm_params": {"model": "groq/qwen-2.5-32b", "rpm": 60}
+        "litellm_params": {"model": "groq/qwen-2.5-32b", "rpm": 60, "tpm":"6K", "tpd":"500K"}
     },
     {
         "model_name": "groq/openai/gpt-oss-120b",
-        "litellm_params": {"model": "groq/openai/gpt-oss-120b", "rpm": 30}
+        "litellm_params": {"model": "groq/openai/gpt-oss-120b", "rpm": 30, "tpm":"8K", "tpd":"200K"}
     },
     {
         "model_name": "groq/llama-3.3-70b-versatile",
-        "litellm_params": {"model": "groq/llama-3.3-70b-versatile", "rpm": 30}
+        "litellm_params": {"model": "groq/llama-3.3-70b-versatile", "rpm": 30, "tpm":"12K", "tpd":"100K"}
     }
 ]
 
 class LiteLLMAgent:
     """A lightweight replacement for DialogAgent using LiteLLM directly."""
-    def __init__(self, name, sys_prompt, model_config_name, use_memory=True):
+    def __init__(self, name, sys_prompt, model_config_name, use_memory=True, fallback_config_name=None):
         self.name = name
         self.sys_prompt = sys_prompt
         # Find the actual litellm model name from config
         self.model = next((cfg["model_name"] for cfg in MODEL_CONFIGS if cfg["config_name"] == model_config_name), "groq/llama-3.1-8b-instant")
+        
+        # Fallback setup
+        self.fallback_model = None
+        if fallback_config_name:
+            self.fallback_model = next((cfg["model_name"] for cfg in MODEL_CONFIGS if cfg["config_name"] == fallback_config_name), None)
+            
         self.use_memory = use_memory
         self.memory = [{"role": "system", "content": self.sys_prompt}]
 
@@ -83,6 +89,22 @@ class LiteLLMAgent:
                     wait_time = initial_backoff * (2 ** attempt)
                     logger.warning(f"[{self.name}] Call failed: {str(e)[:100]}. Retrying in {wait_time}s... (Attempt {attempt+1}/{max_retries})")
                     time.sleep(wait_time)
+                elif self.fallback_model and self.model != self.fallback_model:
+                    # Final attempt: Try the fallback model
+                    logger.warning(f"[{self.name}] Primary model failed. Swapping to FALLBACK: {self.fallback_model}")
+                    try:
+                        response = litellm.completion(
+                            model=self.fallback_model,
+                            messages=self.memory,
+                            api_key=os.environ.get("GROQ_API_KEY")
+                        )
+                        reply_text = response.choices[0].message.content
+                        if self.use_memory: self.memory.append({"role": "assistant", "content": reply_text})
+                        else: self.memory.pop()
+                        return Msg(name=self.name, content=reply_text, role="assistant")
+                    except Exception as fe:
+                        logger.error(f"[{self.name}] Fallback ALSO failed: {fe}")
+                        return Msg(name=self.name, content="ERROR: Both primary and fallback models failed.", role="assistant")
                 else:
                     logger.error(f"[{self.name}] Max retries reached. Error: {e}")
                     # Return a safe error message instead of crashing the 50-email loop
@@ -256,8 +278,9 @@ def create_smart_form_filler_agent():
     return LiteLLMAgent(
         name="FormFiller",
         sys_prompt=SMART_FORM_FILLER_SYS_PROMPT,
-        model_config_name="architect_model_config", # Uses GPT-OSS 120B for high precision
+        model_config_name="smart_form_filler_config",
         use_memory=False,
+        fallback_config_name="smart_form_filler_fallback"
     )
 
 
