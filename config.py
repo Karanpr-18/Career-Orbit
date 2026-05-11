@@ -140,7 +140,6 @@ MODEL_CONFIGS = [
         "model_name": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
         "generate_args": {
             "temperature": 0.3,
-            "rpm": 30,
         },
     },
     {
@@ -149,7 +148,6 @@ MODEL_CONFIGS = [
         "model_name": "groq/openai/gpt-oss-120b",
         "generate_args": {
             "temperature": 0.2,
-            "rpm": 30,   
         },
     },
     {
@@ -158,7 +156,6 @@ MODEL_CONFIGS = [
         "model_name": "groq/qwen/qwen3-32b",
         "generate_args": {
             "temperature": 0.2,
-            "rpm": 60,   
         },
     },
     {
@@ -167,16 +164,22 @@ MODEL_CONFIGS = [
         "model_name": "groq/llama-3.3-70b-versatile",
         "generate_args": {
             "temperature": 0.7,
-            "rpm": 30,
         },
     },
     {
-        "config_name": "dispatcher_model_config",
+        "config_name": "investigator_model_config",
         "model_type": "litellm_chat",
         "model_name": "groq/qwen/qwen3-32b",
         "generate_args": {
             "temperature": 0.1,
-            "rpm": 60,
+        },
+    },
+    {
+        "config_name": "smart_form_filler_config",
+        "model_type": "litellm_chat",
+        "model_name": "groq/openai/gpt-oss-120b",
+        "generate_args": {
+            "temperature": 0.1, 
         },
     },
 ]
@@ -208,7 +211,7 @@ KARAN_PROFILE = {
         },
         "classical_ml_research": {
             "name": "GoEmotions Research",
-            "desc": "evaluating Random Forest/LinearSVC on a 58K emotion-labeled dataset",
+            "desc": "evaluating Linear Regression/Random Forest/LinearSVC/Roberta/Distilbert on a 58K emotion-labeled dataset",
         },
     },
     "mandatory_signoff": """

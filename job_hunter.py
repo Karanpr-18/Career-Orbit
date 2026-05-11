@@ -43,7 +43,6 @@ from agents import (
     create_scout_agent,
     create_architect_agent,
     create_ghostwriter_agent,
-    create_dispatcher_agent,
 )
 from tools import (
     serper_search,
@@ -64,6 +63,7 @@ from tools import (
 # ──────────────────────────────────────────────
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATUS_PATH = os.path.join(BASE_DIR, "agent_status.json")
+
 
 def write_status(status="running", step="Initializing", done=0, total=50):
     try:
@@ -147,7 +147,7 @@ def run_scout_phase(scout_agent, existing_urls: set) -> list[dict]:
     """
     Run the Scout agent to discover new job postings.
 
-    Uses DuckDuckGo search (tool-based) and then asks the Scout LLM
+    Uses Serper.dev Google Search (API-based) and then asks the Scout LLM
     to evaluate and filter the raw results.
 
     Args:
@@ -434,6 +434,7 @@ def run_dispatcher_phase(
     email_draft: dict,
     job_url: str,
     dry_run: bool = False,
+    my_cv_text: str = "",
 ) -> dict:
     """
     Execute the final action (apply via Playwright or draft email) and log to tracker.
@@ -487,6 +488,7 @@ def run_dispatcher_phase(
                         f"Built TalentAI (LLM recruitment platform), PyTorch models, "
                         f"and cut QA time by 95% at Humana.",
                 resume_path=RESUME_PATH,
+                my_cv_text=my_cv_text,
             )
 
             result["portal_status"] = pw_result["status"]
@@ -669,7 +671,7 @@ def run_pipeline(force: bool = False, dry_run: bool = False):
                     email_draft = email_draft_raw
 
                 # PHASE 4: DISPATCHER – Execute
-                is_sent = run_dispatcher_phase(analysis, email_draft, url, dry_run)
+                is_sent = run_dispatcher_phase(analysis, email_draft, url, dry_run, MY_CV_TEXT)
                 
                 if is_sent:
                     successful_sends += 1
@@ -689,7 +691,7 @@ def run_pipeline(force: bool = False, dry_run: bool = False):
                 continue
 
             # ── Rate limiting and Safety ──
-            if is_sent and successful_apps < target_apps and DELAY_BETWEEN_APPLICATIONS > 0:
+            if is_sent and successful_sends < target_apps and DELAY_BETWEEN_APPLICATIONS > 0:
                 logger.info(f"⏳ Cooling off for {DELAY_BETWEEN_APPLICATIONS}s...")
                 time.sleep(DELAY_BETWEEN_APPLICATIONS)
             

@@ -5,7 +5,7 @@ Defines four agents:
   A. The Scout       – Finds new job postings across the web
   B. The Architect   – Scores JDs and routes actions
   C. The Ghostwriter – Drafts human-sounding cold emails
-  D. The Dispatcher  – Executes Playwright apply, Gmail drafts, CSV tracking
+  D. The Investigator  – Executes Playwright apply, Gmail drafts, CSV tracking
 """
 
 import json
@@ -15,6 +15,31 @@ from agentscope.message import Msg
 import litellm
 import os
 from config import KARAN_PROFILE, MODEL_CONFIGS
+
+# ──────────────────────────────────────────────
+# GLOBAL LITELLM SETUP (Local Rate Limiting)
+# ──────────────────────────────────────────────
+litellm.drop_params = True 
+
+# Define the global rate limits and model mappings for local enforcement
+litellm.model_list = [
+    {
+        "model_name": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
+        "litellm_params": {"model": "groq/qwen-2.5-coder-32b", "rpm": 30}
+    },
+    {
+        "model_name": "groq/qwen/qwen3-32b",
+        "litellm_params": {"model": "groq/qwen-2.5-32b", "rpm": 60}
+    },
+    {
+        "model_name": "groq/openai/gpt-oss-120b",
+        "litellm_params": {"model": "groq/openai/gpt-oss-120b", "rpm": 30}
+    },
+    {
+        "model_name": "groq/llama-3.3-70b-versatile",
+        "litellm_params": {"model": "groq/llama-3.3-70b-versatile", "rpm": 30}
+    }
+]
 
 class LiteLLMAgent:
     """A lightweight replacement for DialogAgent using LiteLLM directly."""
@@ -29,18 +54,17 @@ class LiteLLMAgent:
     def __call__(self, msg: Msg) -> Msg:
         self.memory.append({"role": "user", "content": msg.content})
         
-        # Groq API call via litellm with custom retry logic for resilience
-        max_retries = 3
-        retry_delay = 5  # seconds
+        # Groq API call via litellm with exponential backoff for resilience
+        max_retries = 5
+        initial_backoff = 2  # seconds
         
         for attempt in range(max_retries):
-            time.sleep(2)  # Enforce ~30 RPM limit
             try:
+                # We use litellm.completion with the model_list defined above
                 response = litellm.completion(
                     model=self.model,
                     messages=self.memory,
-                    api_key=os.environ.get("GROQ_API_KEY"),
-                    num_retries=8 # LiteLLM internal retries for TPM backoffs
+                    api_key=os.environ.get("GROQ_API_KEY")
                 )
                 
                 reply_text = response.choices[0].message.content
@@ -52,17 +76,17 @@ class LiteLLMAgent:
                     
                 return Msg(name=self.name, content=reply_text, role="assistant")
                 
-            except litellm.RateLimitError as e:
+            except (litellm.RateLimitError, Exception) as e:
+                # Catch both specific rate limits and generic failures for stability
                 if attempt < max_retries - 1:
-                    wait_time = retry_delay * (attempt + 1)
-                    logger.warning(f"[{self.name}] Rate limit hit. Retrying in {wait_time}s... (Attempt {attempt+1}/{max_retries})")
+                    # Exponential backoff: 2s, 4s, 8s, 16s...
+                    wait_time = initial_backoff * (2 ** attempt)
+                    logger.warning(f"[{self.name}] Call failed: {str(e)[:100]}. Retrying in {wait_time}s... (Attempt {attempt+1}/{max_retries})")
                     time.sleep(wait_time)
                 else:
-                    logger.error(f"[{self.name}] Max retries reached for rate limit.")
-                    raise e
-            except Exception as e:
-                logger.error(f"[{self.name}] LLM call failed: {e}")
-                raise e
+                    logger.error(f"[{self.name}] Max retries reached. Error: {e}")
+                    # Return a safe error message instead of crashing the 50-email loop
+                    return Msg(name=self.name, content="ERROR: LLM call failed after multiple retries.", role="assistant")
 
 
 from config import KARAN_PROFILE
@@ -76,7 +100,7 @@ logger = logging.getLogger("job_hunter.agents")
 SCOUT_SYS_PROMPT = """You are The Scout – a job search specialist.
 
 YOUR TASK:
-Search the internet for AI/ML internship job postings in India posted in the last 10 days.
+Filter and evaluate AI/ML internship job postings in India found via Serper.dev.
 
 SEARCH TARGETS (prioritize but don't limit to):
 - instahyre.com, wellfound.com, linkedin.com, naukri.com
@@ -194,37 +218,47 @@ Karan Bhoriya
 * **Portfolio & Projects:** https://karanpr-18.github.io/Karan-Portfolio/
 """
 
-
 # ══════════════════════════════════════════════
-# AGENT D: THE DISPATCHER
+# AGENT D: THE SMART FORM FILLER
 # ══════════════════════════════════════════════
-DISPATCHER_SYS_PROMPT = """You are The Dispatcher – a precision execution agent.
+SMART_FORM_FILLER_SYS_PROMPT = """You are a precision Job Application Assistant.
+Your task is to map a user's personal profile and CV to the input fields found on a job application page.
 
-You receive structured instructions and execute them using the available tools. You DO NOT make creative decisions. You follow the plan exactly.
+INPUTS:
+1. FORM FIELDS: A list of HTML tags (inputs, textareas, buttons) with their IDs, Names, Placeholders, and Labels.
+2. USER PROFILE: JSON data about the user (Name, Email, Phone, University, etc.).
+3. CV TEXT: Full text of the user's CV.
 
-YOUR TOOLS:
-1. playwright_apply – Fill application forms on Greenhouse/Lever/Workable portals
-2. gmail_draft_email – Create a Gmail draft with the cold email
-3. append_to_tracker – Log the result to tracker.csv
-4. search_hiring_email – Search the web for a recruiter/hiring email
+YOUR TASK:
+Determine which value from the USER PROFILE or CV goes into which FORM FIELD.
 
-EXECUTION RULES:
-- If action is "PLAYWRIGHT_APPLY": Try Playwright first. If it fails (login wall, error), fall back to cold email.
-- If action is "SKIP_TO_EMAIL": Go directly to email drafting.
-- If action is "SKIP": Only append to tracker with status "Skipped (Low Fit Score: <7)".
-- ALWAYS append to tracker after every action, regardless of outcome.
+RULES:
+- If a field is 'Full Name', use 'name' from profile.
+- User isn't in any company currently. So set 'Current Employer' as N/A.
+- If a field asks for 'Summary' or 'Why join us?', draft a 2-sentence response based on the CV.
+- If a field asks for 'LinkedIn', 'GitHub', or 'Portfolio', use the corresponding links from the profile.
+- Return a JSON object where keys are the 'id' or 'name' of the field, and values are the text to type.
 
-For EACH job, report your result as a JSON:
+OUTPUT FORMAT (strict JSON):
 {
-  "company": "...",
-  "role": "...",
-  "url": "...",
-  "portal_status": "...",
-  "email_sent_to": "...",
-  "application_status": "...",
-  "details": "..."
+  "mappings": [
+    {"selector": "#first_name", "value": "Karan"},
+    {"selector": "input[name='email']", "value": "karan@example.com"},
+    ...
+  ],
+  "is_resume_required": true,
+  "resume_selector": "#resume-upload"
 }
 """
+
+
+def create_smart_form_filler_agent():
+    return LiteLLMAgent(
+        name="FormFiller",
+        sys_prompt=SMART_FORM_FILLER_SYS_PROMPT,
+        model_config_name="architect_model_config", # Uses GPT-OSS 120B for high precision
+        use_memory=False,
+    )
 
 
 def create_scout_agent():
@@ -250,14 +284,5 @@ def create_ghostwriter_agent():
         name="The Ghostwriter",
         sys_prompt=GHOSTWRITER_SYS_PROMPT,
         model_config_name="ghostwriter_model_config",
-        use_memory=False,
-    )
-
-
-def create_dispatcher_agent():
-    return LiteLLMAgent(
-        name="The Dispatcher",
-        sys_prompt=DISPATCHER_SYS_PROMPT,
-        model_config_name="dispatcher_model_config",
         use_memory=False,
     )

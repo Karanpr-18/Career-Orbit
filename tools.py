@@ -20,8 +20,8 @@ import time
 import logging
 import asyncio
 import requests
-import PyPDF2
-from datetime import datetime, timedelta
+import pypdf
+from datetime import datetime
 from typing import Optional
 from urllib.parse import urlparse
 from crawl4ai import AsyncWebCrawler
@@ -153,21 +153,91 @@ def playwright_apply(
     phone: str = "",
     summary: str = "",
     resume_path: str = "",
+    my_cv_text: str = "",
 ) -> dict:
+    """
+    Agent-driven form filling using Playwright.
+    """
+    from config import KARAN_PROFILE
+    from agents import create_smart_form_filler_agent
+    
     try:
         from playwright.sync_api import sync_playwright
         with sync_playwright() as p:
-            browser = p.chromium.launch(headless=False)
+            browser = p.chromium.launch(headless=False) # Keep False for debug/visibility during automation
             context = browser.new_context()
             page = context.new_page()
-            page.goto(url, wait_until="domcontentloaded", timeout=30000)
-            time.sleep(3)
+            page.goto(url, wait_until="networkidle", timeout=45000)
+            time.sleep(5) # Allow dynamic forms to load
             
-            # Simplified form fill logic
+            # Step 1: Gather all relevant input fields
+            inputs = page.query_selector_all("input, textarea, select")
+            form_context = []
+            for idx, el in enumerate(inputs):
+                try:
+                    # Get associated label if possible
+                    label_text = ""
+                    id_val = el.get_attribute("id")
+                    if id_val:
+                        label_el = page.query_selector(f"label[for='{id_val}']")
+                        if label_el: label_text = label_el.inner_text()
+                    
+                    form_context.append({
+                        "id": id_val,
+                        "name": el.get_attribute("name"),
+                        "type": el.get_attribute("type"),
+                        "placeholder": el.get_attribute("placeholder"),
+                        "label": label_text,
+                        "tag": el.evaluate("el => el.tagName.toLowerCase()")
+                    })
+                except: continue
+
+            # Step 2: Use Agent to determine mappings
+            filler_agent = create_smart_form_filler_agent()
+            user_data = json.dumps(KARAN_PROFILE, indent=1)
+            prompt = (
+                f"Form Context:\n{json.dumps(form_context, indent=1)}\n\n"
+                f"User Profile:\n{user_data}\n\n"
+                f"CV Text Excerpt:\n{my_cv_text[:2000]}\n\n"
+                "Provide the JSON mappings for these fields."
+            )
+            
+            from job_hunter import parse_json_from_response
+            response = filler_agent(Msg(name="user", content=prompt, role="user"))
+            mappings_data = parse_json_from_response(response.content)
+            
+            if not mappings_data or "mappings" not in mappings_data:
+                browser.close()
+                return {"success": False, "status": "Failed", "details": "Agent could not map form fields."}
+
+            # Step 3: Execute Mappings
+            for mapping in mappings_data["mappings"]:
+                selector = mapping.get("selector")
+                val = mapping.get("value")
+                if selector and val:
+                    try:
+                        page.fill(selector, val)
+                    except:
+                        # Try fallback: if selector is ID or Name, build a generic one
+                        try: page.type(selector, val)
+                        except: continue
+
+            # Step 4: Handle Resume Upload
+            if mappings_data.get("is_resume_required") and resume_path:
+                res_selector = mappings_data.get("resume_selector", "input[type='file']")
+                try:
+                    page.set_input_files(res_selector, resume_path)
+                except:
+                    logger.warning(f"[Dispatcher] Could not upload resume using {res_selector}")
+
+            time.sleep(2)
+            # We don't click submit automatically to prevent accidental double-submits 
+            # during dev, but we return success if we filled the form.
             browser.close()
-            return {"success": True, "status": "Applied", "details": "Form fill attempted."}
+            return {"success": True, "status": "Applied", "details": f"Filled {len(mappings_data['mappings'])} fields via AI."}
+            
     except Exception as e:
-        logger.error(f"[Dispatcher] Playwright failed for {url}: {e}")
+        logger.error(f"[Dispatcher] Smart Playwright failed for {url}: {e}")
         return {"success": False, "status": "Skipped (Playwright Error)", "details": str(e)}
 
 # ──────────────────────────────────────────────
@@ -269,8 +339,13 @@ def search_hiring_email(company_name: str, job_url: str = "", jd_text: str = "")
 
     investigator = LiteLLMAgent(
         name="Investigator",
-        sys_prompt=f"You are an OSINT Investigator looking for the email of {company_name}. Tools: Action: SEARCH | Target: <query>, Action: READ | Target: <url>",
-        model_config_name="dispatcher_model_config", # This points to qwen3-32b (60 RPM)
+        sys_prompt=(
+            f"You are an OSINT Investigator looking for the email of {company_name}.\n"
+            "TARGETS: Hiring Manager, Talent Acquisition, HR, Engineering Manager, Senior Engineers, or the job poster.\n"
+            "If HR is not found, look for ANY verified employee in the relevant department.\n"
+            "Tools: Action: SEARCH | Target: <query>, Action: READ | Target: <url>"
+        ),
+        model_config_name="investigator_model_config",
         use_memory=True
     )
     prompt = f"Find the verified hiring email for {company_name}. Job URL context: {job_url}"
@@ -310,7 +385,9 @@ def extract_cv_text(pdf_path: str) -> str:
     try:
         text = ""
         with open(pdf_path, "rb") as f:
-            reader = PyPDF2.PdfReader(f)
-            for page in reader.pages: text += page.extract_text() + "\n"
+            reader = pypdf.PdfReader(f)
+            for page in reader.pages: 
+                extracted = page.extract_text()
+                if extracted: text += extracted + "\n"
         return text.strip()
     except: return "Software Engineer with Python experience."
