@@ -46,7 +46,7 @@ from agents import (
     create_dispatcher_agent,
 )
 from tools import (
-    web_search_jobs,
+    serper_search,
     scrape_job_page,
     score_job,
     route_action,
@@ -164,17 +164,34 @@ def run_scout_phase(scout_agent, existing_urls: set) -> list[dict]:
 
     all_raw_results = []
 
+    def _parse_serper_results(text: str) -> list[dict]:
+        parsed = []
+        if "Search Error" in text: return parsed
+        blocks = text.split("Result ")
+        for block in blocks:
+            if not block.strip(): continue
+            title = re.search(r"Title:\s*(.*)", block)
+            link = re.search(r"Link:\s*(.*)", block)
+            snippet = re.search(r"Snippet:\s*(.*)", block)
+            if title and link:
+                parsed.append({
+                    "title": title.group(1).strip(),
+                    "url": link.group(1).strip(),
+                    "snippet": snippet.group(1).strip() if snippet else ""
+                })
+        return parsed
+
     # Step 1: Run web searches for each query + site combination
     for query in SEARCH_QUERIES:
         # Search across all sites
-        results = web_search_jobs(query, max_results=30)
-        all_raw_results.extend(results)
+        results_str = serper_search(f'{query} "India"')
+        all_raw_results.extend(_parse_serper_results(results_str))
 
         # Also search specific target sites
         for site in TARGET_SITES[:8]:  # Increased to top 8 sites
-            site_query = f"{query} site:{site}"
-            results = web_search_jobs(site_query, max_results=20)
-            all_raw_results.extend(results)
+            site_query = f'site:{site} "{query}" "India"'
+            results_str = serper_search(site_query)
+            all_raw_results.extend(_parse_serper_results(results_str))
 
     # Step 2: Deduplicate by URL
     seen_urls = set()
@@ -335,6 +352,7 @@ def run_ghostwriter_phase(ghostwriter_agent, analysis: dict, my_cv_text: str) ->
         "Paragraph 2 (The Value Pitch): 2 sentences max. Extract exactly ONE major achievement or skill from MY CV that directly solves a problem mentioned in THEIR JOB DESCRIPTION. Do not list all my skills. Be hyper-specific (e.g., 'I saw you need help with X. At my previous role, I built Y using [Skill from CV]').\n\n"
         "Paragraph 3 (The CTA): 1 sentence. A soft call to action asking for a brief chat, followed by a professional sign-off with my name.\n\n"
         "Tone: Confident, concise, and human. No corporate jargon, no fluff, no 'I hope this email finds you well'.\n\n"
+        "Evidence-Based Writer Constraint: You are strictly forbidden from mentioning any skill or experience not found in MY_CV_TEXT. Do not assume or fill in gaps. If a skill is not explicitly in the CV, do not mention it.\n\n"
         "Output ONLY the email text (Subject and Body)."
         "Keep mail under 100 words"
     )
@@ -367,6 +385,27 @@ def run_ghostwriter_phase(ghostwriter_agent, analysis: dict, my_cv_text: str) ->
 
     logger.info(f"[Ghostwriter] Email drafted – Subject: {subject[:60]}...")
     return {"subject": subject, "body": body}
+def run_compliance_check(architect_agent, email_draft: str, my_cv_text: str) -> str:
+    """
+    Architect performs a compliance check to ensure zero hallucination.
+    """
+    logger.info("[Architect] Running Hallucination Compliance Check...")
+    
+    compliance_prompt = (
+        "You are a strict compliance officer. Compare this Email Draft to my CV.\n"
+        "If the email mentions ANY skill, project, or experience NOT found in my CV, delete those specific sentences.\n"
+        "Do not change the rest of the email. Return only the cleaned email text.\n\n"
+        f"MY CV:\n{my_cv_text}\n\n"
+        f"EMAIL DRAFT:\n{email_draft}"
+    )
+    
+    msg = Msg("user", compliance_prompt, role="user")
+    try:
+        response = architect_agent(msg)
+        return response.content.strip()
+    except Exception as e:
+        logger.warning(f"[Architect] Compliance check failed: {e}")
+        return email_draft
 
 
 def _fallback_email(analysis: dict) -> str:
@@ -463,8 +502,13 @@ def run_dispatcher_phase(
 
     # ── ACTION: SKIP_TO_EMAIL ──
     if action == "SKIP_TO_EMAIL":
-        # Search for a hiring email
-        hiring_email = search_hiring_email(company, job_url, analysis.get("jd_text", ""))
+        # ── ONLY Trigger Investigator (Search) if Match Score is High (8+) ──
+        if analysis.get("score", 0) >= 8:
+            logger.info(f"[Dispatcher] High score ({analysis['score']}). Triggering Investigator for hiring email...")
+            hiring_email = search_hiring_email(company, job_url, analysis.get("jd_text", ""))
+        else:
+            logger.info(f"[Dispatcher] Score {analysis.get('score')} is moderate/low. Skipping Investigator to save credits.")
+            hiring_email = "None"
 
         if hiring_email and hiring_email != "None":
             if dry_run:
@@ -504,7 +548,9 @@ def run_dispatcher_phase(
 
     # ── ONLY Append to tracker if successful ──
     success_statuses = ["Mailed", "Applied", "Dry Run"]
-    if result["application_status"] in success_statuses:
+    is_success = result["application_status"] in success_statuses
+
+    if is_success:
         append_to_tracker(
             date=today,
             company=result["company"],
@@ -517,7 +563,7 @@ def run_dispatcher_phase(
     else:
         logger.info(f"[Dispatcher] Skipping CSV logging for unsuccessful/skipped job: {company}")
 
-    return result
+    return is_success
 
 
 # ──────────────────────────────────────────────
@@ -536,6 +582,7 @@ def run_pipeline(force: bool = False, dry_run: bool = False):
     MY_CV_TEXT = extract_cv_text(RESUME_PATH)
     logger.info(f"📄 Loaded CV text ({len(MY_CV_TEXT)} chars) for dynamic personalization")
 
+    now = datetime.now()
     logger.info("🚀 Starting AgentScope Multi-Agent Job Hunter Pipeline")
     logger.info(f"   Mode: {'DRY RUN' if dry_run else 'LIVE'}")
     logger.info(f"   Time: {now.strftime('%Y-%m-%d %H:%M:%S')}")
@@ -561,105 +608,101 @@ def run_pipeline(force: bool = False, dry_run: bool = False):
     existing_urls = load_existing_urls()
     logger.info(f"📊 Tracker has {len(existing_urls)} existing URLs")
 
-    # ── PHASE 1: SCOUT ──
-    jobs = run_scout_phase(scout, existing_urls)
+    # ── Success-Targeted Hunting Strategy ──
+    successful_sends = 0
+    target_apps = 50
+    total_checked = 0
 
-    if not jobs:
-        logger.info("🏁 No new jobs found. Pipeline complete.")
-        return
-
-    # Cap to daily limit
-    jobs = jobs[:MAX_APPLICATIONS_PER_DAY]
-    logger.info(f"\n📋 Processing {len(jobs)} jobs through the pipeline\n")
-
-    # ── PROCESS EACH JOB ──
-    processed_count = 0
-    results_summary = []
-
-    for i, job in enumerate(jobs):
-        url = job.get("url", "")
-
-        if not url or url in existing_urls:
-            logger.info(f"[{i+1}/{len(jobs)}] Skipping (no URL or already tracked)")
-            continue
-
-        logger.info(f"\n{'═' * 60}")
-        logger.info(f"[{i+1}/{len(jobs)}] Processing: {job.get('title', 'Unknown')}")
-        logger.info(f"{'═' * 60}")
-
-        try:
-            # PHASE 2: ARCHITECT – Evaluate & Route
-            analysis = run_architect_phase(architect, job, MY_CV_TEXT)
-
-            # PHASE 3: GHOSTWRITER – Draft email (only if needed)
-            email_draft = {"subject": "", "body": ""}
-            if analysis["action"] in ("SKIP_TO_EMAIL", "PLAYWRIGHT_APPLY"):
-                email_draft = run_ghostwriter_phase(ghostwriter, analysis, MY_CV_TEXT)
-
-            # PHASE 4: DISPATCHER – Execute
-            result = run_dispatcher_phase(analysis, email_draft, url, dry_run)
-            results_summary.append(result)
-
-            # Add to existing URLs to prevent re-processing
-            existing_urls.add(url)
+    while successful_sends < target_apps:
+        # Step 1: Scout for a batch of jobs
+        jobs = run_scout_phase(scout, existing_urls)
+        
+        if not jobs:
+            logger.info("🕵️ Job queue empty. Autonomously hunting for more leads...")
+            # Autonomous Search: Remote Python Developer Jobs India
+            autonomous_query = "Remote Python Developer Jobs India"
+            res_str = serper_search(autonomous_query)
             
-            # Update progress for every job in the list
-            current_progress = i + 1
-            status_step = f"Phase: {analysis.get('action', 'Skip')}"
-            write_status(step=status_step, done=current_progress, total=len(jobs))
-
-        except Exception as e:
-            logger.error(f"❌ Error processing job {url}: {e}", exc_info=True)
-            # Log the failure to tracker
-            append_to_tracker(
-                date=datetime.now().strftime("%Y-%m-%d"),
-                company=job.get("company", extract_company_from_url(url)),
-                role=job.get("title", "Unknown"),
-                url=url,
-                portal_status="Error",
-                email_sent_to="None",
-                application_status=f"Pipeline Error: {str(e)[:80]}",
-            )
-            continue
-
-        # ── Rate limiting: ONLY if mail was sent or application succeeded ──
-        if i < len(jobs) - 1:
-            success_statuses = ["Mailed", "Applied", "Dry Run"]
-            is_success = results_summary and results_summary[-1].get("application_status") in success_statuses
-            
-            if is_success and DELAY_BETWEEN_APPLICATIONS > 0:
-                logger.info(f"\n⏳ Cooling off for {DELAY_BETWEEN_APPLICATIONS // 60} minutes "
-                            f"before next application...")
+            def _parse(text: str) -> list[dict]:
+                parsed = []
+                if "Search Error" in text: return parsed
+                blocks = text.split("Result ")
+                for block in blocks:
+                    if not block.strip(): continue
+                    title = re.search(r"Title:\s*(.*)", block)
+                    link = re.search(r"Link:\s*(.*)", block)
+                    if title and link:
+                        parsed.append({"title": title.group(1).strip(), "url": link.group(1).strip()})
+                return parsed
                 
-                # Check if we're still within work hours
-                check_time = datetime.now()
-                if not force and check_time.hour >= WORK_HOURS_END:
-                    logger.info("⏰ Work hours ended. Stopping pipeline.")
-                    break
+            jobs = _parse(res_str)
+            if not jobs:
+                logger.info("🏁 No more new jobs found even after autonomous search. Ending.")
+                break
 
+        logger.info(f"\n📋 Processing batch of {len(jobs)} jobs. Current progress: {successful_sends}/{target_apps}\n")
+
+        for job in jobs:
+            if successful_sends >= target_apps: break
+
+            total_checked += 1
+            url = job.get("url", "")
+            if not url or url in existing_urls: continue
+
+            logger.info(f"\n{'═' * 60}")
+            logger.info(f"HUNTING [{successful_sends+1}/{target_apps}] | Checked: {total_checked} | Processing: {job.get('title', 'Unknown')}")
+            logger.info(f"{'═' * 60}")
+
+            try:
+                # PHASE 2: ARCHITECT – Evaluate & Route
+                analysis = run_architect_phase(architect, job, MY_CV_TEXT)
+
+                # PHASE 3: GHOSTWRITER – Draft email
+                email_draft_raw = {"subject": "", "body": ""}
+                if analysis["action"] in ("SKIP_TO_EMAIL", "PLAYWRIGHT_APPLY"):
+                    email_draft_raw = run_ghostwriter_phase(ghostwriter, analysis, MY_CV_TEXT)
+                    
+                    # Task 2: Compliance Check
+                    clean_body = run_compliance_check(architect, email_draft_raw["body"], MY_CV_TEXT)
+                    email_draft = {"subject": email_draft_raw["subject"], "body": clean_body}
+                else:
+                    email_draft = email_draft_raw
+
+                # PHASE 4: DISPATCHER – Execute
+                is_sent = run_dispatcher_phase(analysis, email_draft, url, dry_run)
+                
+                if is_sent:
+                    successful_sends += 1
+                    logger.info(f"✨ SUCCESS! Progress: {successful_sends}/{target_apps}")
+                
+                # Update status for the dashboard with progress bar
+                write_status(
+                    step=f"Progress: {successful_sends}/{target_apps} successful emails sent",
+                    done=successful_sends,
+                    total=target_apps
+                )
+
+                existing_urls.add(url)
+
+            except Exception as e:
+                logger.error(f"❌ Error processing job {url}: {e}", exc_info=True)
+                continue
+
+            # ── Rate limiting and Safety ──
+            if is_sent and successful_apps < target_apps and DELAY_BETWEEN_APPLICATIONS > 0:
+                logger.info(f"⏳ Cooling off for {DELAY_BETWEEN_APPLICATIONS}s...")
                 time.sleep(DELAY_BETWEEN_APPLICATIONS)
-            else:
-                logger.info("[Pipeline] Moving directly to next lead.")
+            
+            if not force and datetime.now().hour >= WORK_HOURS_END:
+                logger.info("⏰ Work hours ended. Stopping pipeline.")
+                return
 
-    # ── SUMMARY ──
+    # ── FINAL SUMMARY ──
     logger.info(f"\n{'═' * 60}")
-    logger.info("🏁 PIPELINE COMPLETE – SUMMARY")
+    logger.info("🏁 HUNTING SESSION COMPLETE")
     logger.info(f"{'═' * 60}")
-    logger.info(f"Total jobs discovered: {len(jobs)}")
-    logger.info(f"Total jobs processed: {processed_count}")
-
-    # Breakdown by status
-    statuses = {}
-    for r in results_summary:
-        status = r.get("application_status", "Unknown")
-        statuses[status] = statuses.get(status, 0) + 1
-
-    for status, count in sorted(statuses.items()):
-        logger.info(f"  {status}: {count}")
-
-    logger.info(f"\n📁 Tracker updated: {TRACKER_CSV_PATH}")
-    logger.info(f"📁 Logs saved to: {LOG_DIR}")
-    write_status(status="finished", step="All Done", done=processed_count, total=processed_count)
+    logger.info(f"Target: {target_apps} | Successfully Sent: {successful_sends} | Total Checked: {total_checked}")
+    write_status(status="finished", step="Hunting Session Complete", done=successful_sends, total=target_apps)
 
 
 # ──────────────────────────────────────────────
