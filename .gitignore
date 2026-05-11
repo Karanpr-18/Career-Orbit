@@ -20,10 +20,9 @@ tracker.csv
 logs/
 agent_status.json
 agent_logs.txt
+my_cv.pdf
+my_resume.pdf
 
 # OS
 .DS_Store
 Thumbs.db
-
-my_resume.pdf
-my_cv.pdf
