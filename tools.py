@@ -27,6 +27,7 @@ import re
 from crawl4ai import WebCrawler
 from agents import LiteLLMAgent
 from agentscope.message import Msg
+import PyPDF2
 
 logger = logging.getLogger("job_hunter.tools")
 
@@ -655,8 +656,8 @@ def extract_company_from_url(url: str) -> str:
 # ──────────────────────────────────────────────
 def search_hiring_email(company_name: str, job_url: str = "", jd_text: str = "") -> str:
     """
-    Finds a hiring manager or recruiter email using a mini ReAct loop.
-    1. Initial regex check on JD.
+    Finds a hiring manager or recruiter or job poster's email using a mini ReAct loop.
+    1. Initial regex check on job portal.
     2. LiteLLMAgent "Investigator" loop with SEARCH and READ tools.
     """
     email_pattern = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
@@ -674,13 +675,15 @@ def search_hiring_email(company_name: str, job_url: str = "", jd_text: str = "")
     investigator = LiteLLMAgent(
         name="Investigator",
         sys_prompt=(
-            f"You are an OSINT Investigator looking for the hiring manager or recruiter email of {company_name}. "
+            f"You are an OSINT Investigator looking for the hiring manager or recruiter or job poster's email of {company_name}. "
             "You have two tools available:\n"
             "- Action: SEARCH | Target: <query>\n"
             "- Action: READ | Target: <url>\n\n"
             "If you find the email, return ONLY the email address. "
             "If you need more information, use one of the actions above. "
             "Limit your reasoning and be concise."
+            "Try diffrent approaches until you're convinced that email can't be found"
+            "Important: Do not hallucinate emails. If you cannot find the email, return 'Not Found'."
         ),
         model_config_name="dispatcher_model_config", # Uses groq/qwen3-32b
         use_memory=True
@@ -732,3 +735,27 @@ def search_hiring_email(company_name: str, job_url: str = "", jd_text: str = "")
 
     logger.warning(f"[Investigator] No verified hiring email found for {company_name} after ReAct loop.")
     return "Not Found"
+
+# ──────────────────────────────────────────────
+# 10. CV TEXT EXTRACTION
+# ──────────────────────────────────────────────
+def extract_cv_text(pdf_path: str) -> str:
+    """
+    Extract text content from a PDF CV/Resume file.
+    """
+    if not os.path.exists(pdf_path):
+        logger.warning(f"[Tools] CV file not found at {pdf_path}. Using fallback profile.")
+        return "Software Engineer with Python experience, AI/ML focus, and experience in building agentic systems."
+
+    try:
+        text = ""
+        with open(pdf_path, "rb") as f:
+            reader = PyPDF2.PdfReader(f)
+            for page in reader.pages:
+                text += page.extract_text() + "\n"
+        
+        logger.info(f"[Tools] Successfully extracted {len(text)} chars from CV.")
+        return text.strip()
+    except Exception as e:
+        logger.error(f"[Tools] Failed to extract text from PDF: {e}")
+        return "Software Engineer with Python experience."

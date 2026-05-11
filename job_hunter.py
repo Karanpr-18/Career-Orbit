@@ -56,6 +56,7 @@ from tools import (
     load_existing_urls,
     extract_company_from_url,
     search_hiring_email,
+    extract_cv_text,
 )
 
 # ──────────────────────────────────────────────
@@ -237,17 +238,9 @@ def run_scout_phase(scout_agent, existing_urls: set) -> list[dict]:
 # ──────────────────────────────────────────────
 # PHASE 2: ARCHITECT – EVALUATE & ROUTE
 # ──────────────────────────────────────────────
-def run_architect_phase(architect_agent, job: dict) -> dict:
+def run_architect_phase(architect_agent, job: dict, my_cv_text: str) -> dict:
     """
     Run the Architect agent on a single job to score and route it.
-
-    Args:
-        architect_agent: The Architect DialogAgent instance.
-        job: A dict with 'title', 'url', and 'company'.
-
-    Returns:
-        A dict with 'score', 'action', 'company', 'role', 'key_technologies',
-        'jd_category', and 'reason'. Returns a SKIP result on errors.
     """
     url = job.get("url", "")
     logger.info(f"\n{'─' * 50}")
@@ -258,25 +251,21 @@ def run_architect_phase(architect_agent, job: dict) -> dict:
     jd_text = scrape_job_page(url)
 
     if jd_text.startswith("ERROR"):
-        logger.warning(f"[Architect] Scraping failed ({jd_text}). Falling back to basic title/company evaluation.")
-        # Create a synthetic JD so the LLM can still draft an email
-        jd_text = f"Job Title: {job.get('title', 'Unknown')}\nCompany: {job.get('company', extract_company_from_url(url))}\nDetails could not be scraped due to bot protection, but the search context implies an AI/ML or Data Science role suitable for a junior candidate."
+        logger.warning(f"[Architect] Scraping failed. Using search metadata for evaluation.")
+        jd_text = f"Job Title: {job.get('title', 'Unknown')}\nCompany: {job.get('company', 'Unknown')}\n[Full JD could not be scraped]"
 
-    # Step 2: Tool-based scoring (fast, deterministic)
+    # Step 2: Tool-based scoring (for fallback/signal)
     tool_score = score_job(jd_text)
-
-    # Step 3: Tool-based routing
     tool_action = route_action(url, tool_score)
 
-    # Step 4: Ask the Architect LLM for deeper analysis
+    # Step 3: Dynamic CV-JD Matching Prompt
     architect_prompt = (
-        f"Evaluate this job posting and return your analysis as JSON.\n\n"
-        f"URL: {url}\n"
-        f"Job Title (from search): {job.get('title', 'Unknown')}\n"
-        f"Company (from search): {job.get('company', 'Unknown')}\n\n"
-        f"JOB DESCRIPTION TEXT:\n{jd_text}\n\n"
-        f"My tool-based pre-score is {tool_score} and pre-route is '{tool_action}'. "
-        f"Confirm or override with your own analysis. Return the JSON."
+        "You are an expert tech recruiter. I will give you a Job Description and my current CV.\n"
+        "Evaluate how well my CV matches this job.\n\n"
+        f"MY CV:\n{my_cv_text}\n\n"
+        f"JOB DESCRIPTION:\n{jd_text}\n\n"
+        "Score the match from 1-10 based ONLY on the skills and experience present in my CV compared to their requirements. "
+        "Output a JSON containing 'score' and 'reason'."
     )
 
     architect_msg = Msg("user", architect_prompt, role="user")
@@ -325,32 +314,28 @@ def run_architect_phase(architect_agent, job: dict) -> dict:
 # ──────────────────────────────────────────────
 # PHASE 3: GHOSTWRITER – DRAFT COLD EMAIL
 # ──────────────────────────────────────────────
-def run_ghostwriter_phase(ghostwriter_agent, analysis: dict) -> dict:
+def run_ghostwriter_phase(ghostwriter_agent, analysis: dict, my_cv_text: str) -> dict:
     """
-    Run the Ghostwriter agent to draft a cold email for a job.
-
-    Args:
-        ghostwriter_agent: The Ghostwriter DialogAgent instance.
-        analysis: The Architect's analysis dict.
-
-    Returns:
-        A dict with 'subject' and 'body' of the drafted email.
+    Run the Ghostwriter agent to draft a highly personalized cold email.
     """
-    logger.info(f"PHASE 3: THE GHOSTWRITER – Drafting email for {analysis['company']}")
+    logger.info(f"PHASE 3: THE GHOSTWRITER – Drafting personalized email for {analysis['company']}")
 
-    email_context = {
-        "company": analysis["company"],
-        "role": analysis["role"],
-        "key_technologies": analysis.get("key_technologies", []),
-        "jd_category": analysis.get("jd_category", "general"),
-        "reason": analysis.get("reason", ""),
-        "recruiter_name": "",  # Will be filled if found
-    }
+    jd_text = analysis.get("jd_text", "See job title and company.")
+    job_title = analysis.get("role", "Job Title")
+    company_name = analysis.get("company", "Company")
 
     ghostwriter_prompt = (
-        f"Draft a cold email for this job:\n\n"
-        f"{json.dumps(email_context, indent=2)}\n\n"
-        f"Remember: under 100 words, sound like a real person, and include the mandatory sign-off."
+        "You are an elite executive assistant writing a cold email to a hiring manager.\n"
+        f"Write a short, highly personalized cold email applying for the {job_title} role at {company_name}.\n\n"
+        f"MY CV:\n{my_cv_text}\n\n"
+        f"JOB DESCRIPTION:\n{jd_text}\n\n"
+        "Email Structure Rules:\n\n"
+        f"Subject Line: Keep it under 6 words, professional and intriguing (e.g., 'Experienced AI Engineer for {company_name}').\n\n"
+        "Paragraph 1 (The Hook): 1-2 sentences. State the role you are applying for and mention one specific, impressive thing about their company from the JD to show you did your research.\n\n"
+        "Paragraph 2 (The Value Pitch): 2 sentences max. Extract exactly ONE major achievement or skill from MY CV that directly solves a problem mentioned in THEIR JOB DESCRIPTION. Do not list all my skills. Be hyper-specific (e.g., 'I saw you need help with X. At my previous role, I built Y using [Skill from CV]').\n\n"
+        "Paragraph 3 (The CTA): 1 sentence. A soft call to action asking for a brief chat, followed by a professional sign-off with my name.\n\n"
+        "Tone: Confident, concise, and human. No corporate jargon, no fluff, no 'I hope this email finds you well'.\n\n"
+        "Output ONLY the email text (Subject and Body)."
     )
 
     ghostwriter_msg = Msg("user", ghostwriter_prompt, role="user")
@@ -545,16 +530,10 @@ def run_pipeline(force: bool = False, dry_run: bool = False):
         force: If True, ignore the 9am-5pm time restriction.
         dry_run: If True, don't execute actual applications or emails.
     """
-    # ── Check work hours ──
-    now = datetime.now()
-    current_hour = now.hour
-
-    if not force and not (WORK_HOURS_START <= current_hour < WORK_HOURS_END):
-        logger.info(
-            f"⏰ Outside work hours ({WORK_HOURS_START}:00 – {WORK_HOURS_END}:00). "
-            f"Current time: {now.strftime('%H:%M')}. Use --force to override."
-        )
-        return
+    
+    # ── Load actual CV text for dynamic scoring & drafting ──
+    MY_CV_TEXT = extract_cv_text(RESUME_PATH)
+    logger.info(f"📄 Loaded CV text ({len(MY_CV_TEXT)} chars) for dynamic personalization")
 
     logger.info("🚀 Starting AgentScope Multi-Agent Job Hunter Pipeline")
     logger.info(f"   Mode: {'DRY RUN' if dry_run else 'LIVE'}")
@@ -609,12 +588,12 @@ def run_pipeline(force: bool = False, dry_run: bool = False):
 
         try:
             # PHASE 2: ARCHITECT – Evaluate & Route
-            analysis = run_architect_phase(architect, job)
+            analysis = run_architect_phase(architect, job, MY_CV_TEXT)
 
             # PHASE 3: GHOSTWRITER – Draft email (only if needed)
             email_draft = {"subject": "", "body": ""}
             if analysis["action"] in ("SKIP_TO_EMAIL", "PLAYWRIGHT_APPLY"):
-                email_draft = run_ghostwriter_phase(ghostwriter, analysis)
+                email_draft = run_ghostwriter_phase(ghostwriter, analysis, MY_CV_TEXT)
 
             # PHASE 4: DISPATCHER – Execute
             result = run_dispatcher_phase(analysis, email_draft, url, dry_run)

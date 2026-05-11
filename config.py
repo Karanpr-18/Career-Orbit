@@ -148,6 +148,7 @@ MODEL_CONFIGS = [
         "generate_args": {
             "temperature": 0.2,
             "max_tokens": 4096,
+            "rpm": 60,   
         },
     },
     {
@@ -157,6 +158,7 @@ MODEL_CONFIGS = [
         "generate_args": {
             "temperature": 0.2,
             "max_tokens": 4096,
+            "rpm": 60,   
         },
     },
     {
@@ -165,7 +167,8 @@ MODEL_CONFIGS = [
         "model_name": "groq/openai/gpt-oss-120b",
         "generate_args": {
             "temperature": 0.7,
-            "max_tokens": 2048,
+            "max_tokens": 4096,
+            "rpm": 60,
         },
     },
     {
@@ -175,6 +178,7 @@ MODEL_CONFIGS = [
         "generate_args": {
             "temperature": 0.1,
             "max_tokens": 4096,
+            "rpm": 60,
         },
     },
 ]
