@@ -148,6 +148,7 @@ MODEL_CONFIGS = [
         "model_name": "groq/openai/gpt-oss-120b",
         "generate_args": {
             "temperature": 0.2,
+            "max_tokens": 4000,
         },
     },
     {
@@ -156,6 +157,7 @@ MODEL_CONFIGS = [
         "model_name": "groq/qwen/qwen3-32b",
         "generate_args": {
             "temperature": 0.2,
+            "max_tokens": 4000,
         },
     },
     {
@@ -163,7 +165,15 @@ MODEL_CONFIGS = [
         "model_type": "litellm_chat",
         "model_name": "groq/llama-3.3-70b-versatile",
         "generate_args": {
-            "temperature": 0.7,
+            "temperature": 0.6,
+        },
+    },
+    {
+        "config_name": "ghostwriter_fallback_model",
+        "model_type": "litellm_chat",
+        "model_name": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
+        "generate_args": {
+            "temperature": 0.6,
         },
     },
     {
@@ -172,6 +182,16 @@ MODEL_CONFIGS = [
         "model_name": "groq/qwen/qwen3-32b",
         "generate_args": {
             "temperature": 0.1,
+            "max_tokens": 4000,
+        },
+    },
+    {
+        "config_name": "investigator_fallback_model",
+        "model_type": "litellm_chat",
+        "model_name": "groq/openai/gpt-oss-20b",
+        "generate_args": {
+            "temperature": 0.2,
+            "max_tokens": 4000,
         },
     },
     {
@@ -180,14 +200,16 @@ MODEL_CONFIGS = [
         "model_name": "groq/openai/gpt-oss-120b",
         "generate_args": {
             "temperature": 0.1, 
+            "max_tokens": 4000,
         },
     },
     {
         "config_name": "smart_form_filler_fallback",
         "model_type": "litellm_chat",
-        "model_name": "groq/qwen/qwen3-32b",
+        "model_name": "groq/openai/gpt-oss-20b",
         "generate_args": {
             "temperature": 0.2,
+            "max_tokens": 4000,
         },
     },
 ]

@@ -391,7 +391,8 @@ def search_hiring_email(company_name: str, job_url: str = "", jd_text: str = "")
             "Tools: Action: SEARCH | Target: <query>, Action: READ | Target: <url>"
         ),
         model_config_name="investigator_model_config",
-        use_memory=True
+        use_memory=True,
+        fallback_config_name="investigator_fallback_model"
     )
     prompt = f"Find the verified hiring email for {company_name}. Job URL context: {job_url}"
     msg = Msg(name="user", content=prompt, role="user")

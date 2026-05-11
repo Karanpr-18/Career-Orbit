@@ -36,23 +36,36 @@ litellm.model_list = [
         "litellm_params": {"model": "groq/openai/gpt-oss-120b", "rpm": 30, "tpm":"8K", "tpd":"200K"}
     },
     {
+        "model_name": "groq/openai/gpt-oss-120b",
+        "litellm_params": {"model": "groq/openai/gpt-oss-20b", "rpm": 30, "tpm":"8K", "tpd":"200K"}
+    },
+    {
         "model_name": "groq/llama-3.3-70b-versatile",
         "litellm_params": {"model": "groq/llama-3.3-70b-versatile", "rpm": 30, "tpm":"12K", "tpd":"100K"}
     }
 ]
+
+# Initialize the Router for global rate limiting enforcement
+router = litellm.Router(model_list=litellm.model_list)
 
 class LiteLLMAgent:
     """A lightweight replacement for DialogAgent using LiteLLM directly."""
     def __init__(self, name, sys_prompt, model_config_name, use_memory=True, fallback_config_name=None):
         self.name = name
         self.sys_prompt = sys_prompt
-        # Find the actual litellm model name from config
-        self.model = next((cfg["model_name"] for cfg in MODEL_CONFIGS if cfg["config_name"] == model_config_name), "groq/llama-3.1-8b-instant")
+        # Find the actual litellm model name and args from config
+        config = next((cfg for cfg in MODEL_CONFIGS if cfg["config_name"] == model_config_name), None)
+        self.model = config["model_name"] if config else "groq/llama-3.1-8b-instant"
+        self.generate_args = config.get("generate_args", {}) if config else {}
         
         # Fallback setup
         self.fallback_model = None
+        self.fallback_args = {}
         if fallback_config_name:
-            self.fallback_model = next((cfg["model_name"] for cfg in MODEL_CONFIGS if cfg["config_name"] == fallback_config_name), None)
+            fb_config = next((cfg for cfg in MODEL_CONFIGS if cfg["config_name"] == fallback_config_name), None)
+            if fb_config:
+                self.fallback_model = fb_config["model_name"]
+                self.fallback_args = fb_config.get("generate_args", {})
             
         self.use_memory = use_memory
         self.memory = [{"role": "system", "content": self.sys_prompt}]
@@ -66,11 +79,11 @@ class LiteLLMAgent:
         
         for attempt in range(max_retries):
             try:
-                # We use litellm.completion with the model_list defined above
-                response = litellm.completion(
+                # We use router.completion to enforce TPM/RPM/TPD limits locally
+                response = router.completion(
                     model=self.model,
                     messages=self.memory,
-                    api_key=os.environ.get("GROQ_API_KEY")
+                    **self.generate_args
                 )
                 
                 reply_text = response.choices[0].message.content
@@ -83,6 +96,12 @@ class LiteLLMAgent:
                 return Msg(name=self.name, content=reply_text, role="assistant")
                 
             except (litellm.RateLimitError, Exception) as e:
+                error_msg = str(e)
+                # Check for TPD (Tokens Per Day) or other major limits for Dashboard visibility
+                if "Tokens Per Day" in error_msg or "daily" in error_msg.lower():
+                    logger.critical(f"\n🛑 [LIMIT HIT] {self.model} has exhausted its TOKENS PER DAY (TPD) quota!")
+                    logger.critical(f"📊 Model Status: EXHAUSTED | Switching to Fallback Strategy...\n")
+
                 # Catch both specific rate limits and generic failures for stability
                 if attempt < max_retries - 1:
                     # Exponential backoff: 2s, 4s, 8s, 16s...
@@ -90,21 +109,24 @@ class LiteLLMAgent:
                     logger.warning(f"[{self.name}] Call failed: {str(e)[:100]}. Retrying in {wait_time}s... (Attempt {attempt+1}/{max_retries})")
                     time.sleep(wait_time)
                 elif self.fallback_model and self.model != self.fallback_model:
-                    # Final attempt: Try the fallback model
+                    # Final attempt: Try the fallback model via router
                     logger.warning(f"[{self.name}] Primary model failed. Swapping to FALLBACK: {self.fallback_model}")
                     try:
-                        response = litellm.completion(
+                        response = router.completion(
                             model=self.fallback_model,
                             messages=self.memory,
-                            api_key=os.environ.get("GROQ_API_KEY")
+                            **self.fallback_args
                         )
                         reply_text = response.choices[0].message.content
                         if self.use_memory: self.memory.append({"role": "assistant", "content": reply_text})
                         else: self.memory.pop()
                         return Msg(name=self.name, content=reply_text, role="assistant")
                     except Exception as fe:
-                        logger.error(f"[{self.name}] Fallback ALSO failed: {fe}")
-                        return Msg(name=self.name, content="ERROR: Both primary and fallback models failed.", role="assistant")
+                        fe_msg = str(fe)
+                        if "Tokens Per Day" in fe_msg or "daily" in fe_msg.lower():
+                            logger.critical(f"🚨 [CRITICAL] Fallback model {self.fallback_model} ALSO exhausted its TPD quota!")
+                        logger.error(f"[{self.name}] Fallback ALSO failed: {fe_msg}")
+                        return Msg(name=self.name, content=f"ERROR: Both primary and fallback models failed. {fe_msg}", role="assistant")
                 else:
                     logger.error(f"[{self.name}] Max retries reached. Error: {e}")
                     # Return a safe error message instead of crashing the 50-email loop
@@ -308,4 +330,5 @@ def create_ghostwriter_agent():
         sys_prompt=GHOSTWRITER_SYS_PROMPT,
         model_config_name="ghostwriter_model_config",
         use_memory=False,
+        fallback_config_name="ghostwriter_fallback_model"
     )
