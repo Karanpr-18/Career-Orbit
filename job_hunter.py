@@ -336,6 +336,7 @@ def run_ghostwriter_phase(ghostwriter_agent, analysis: dict, my_cv_text: str) ->
         "Paragraph 3 (The CTA): 1 sentence. A soft call to action asking for a brief chat, followed by a professional sign-off with my name.\n\n"
         "Tone: Confident, concise, and human. No corporate jargon, no fluff, no 'I hope this email finds you well'.\n\n"
         "Output ONLY the email text (Subject and Body)."
+        "Keep mail under 100 words"
     )
 
     ghostwriter_msg = Msg("user", ghostwriter_prompt, role="user")
