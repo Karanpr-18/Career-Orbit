@@ -66,8 +66,7 @@ litellm.model_list = [
 # Initialize the Router with strict zero-retry policy for immediate fallback
 router = litellm.Router(
     model_list=litellm.model_list,
-    num_retries=0,
-    request_timeout=30
+    num_retries=0
 )
 
 class LiteLLMAgent:
@@ -106,6 +105,7 @@ class LiteLLMAgent:
                     model=self.model,
                     messages=self.memory,
                     num_retries=0,
+                    timeout=30,
                     **self.generate_args
                 )
                 

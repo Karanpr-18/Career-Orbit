@@ -740,10 +740,6 @@ def run_pipeline(force: bool = False, dry_run: bool = False):
             if is_sent and successful_sends < target_apps and DELAY_BETWEEN_APPLICATIONS > 0:
                 logger.info(f"⏳ Cooling off for {DELAY_BETWEEN_APPLICATIONS}s...")
                 time.sleep(DELAY_BETWEEN_APPLICATIONS)
-            
-            if not force and datetime.now().hour >= WORK_HOURS_END:
-                logger.info("⏰ Work hours ended. Stopping pipeline.")
-                return
 
     # ── FINAL SUMMARY ──
     logger.info(f"\n{'═' * 60}")
