@@ -304,15 +304,15 @@ export default function JobHuntApp() {
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
                   {/* Table Column - Now 3/4 width */}
                   <div className="lg:col-span-3 space-y-6">
-                    <div className="bg-[var(--bg-card)] border border-[var(--border-clr)] rounded-2xl overflow-hidden shadow-2xl">
-                      <div className="px-6 py-4 border-b border-white/5 bg-white/[0.01] flex justify-between items-center">
-                        <h3 className="text-xs font-black uppercase tracking-widest text-slate-300">Live Applications</h3>
+                    <div className="bg-[var(--bg-card)] border border-[var(--border-clr)] rounded-2xl overflow-hidden shadow-2xl transition-colors duration-300">
+                      <div className="px-6 py-4 border-b border-[var(--border-clr)] bg-[var(--bg-card)] flex justify-between items-center">
+                        <h3 className="text-xs font-black uppercase tracking-widest text-[var(--text-primary)]">Live Applications</h3>
                         <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
                       </div>
                       <div className="w-full max-h-[750px] overflow-auto custom-scrollbar">
                         <table className="w-full text-left table-fixed">
-                          <thead className="sticky top-0 bg-[#12141d] z-20">
-                            <tr className="text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-white/5 shadow-sm">
+                          <thead className="sticky top-0 bg-[var(--bg-sidebar)] z-20">
+                            <tr className="text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-[var(--border-clr)] shadow-sm">
                               <th className="px-6 py-4 w-[22%]">Company</th>
                               <th className="py-4 w-[28%]">Role</th>
                               <th className="py-4 w-[12%]">Link</th>
@@ -321,7 +321,7 @@ export default function JobHuntApp() {
                               <th className="py-4 px-6 w-[10%] text-right">Actions</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-white/5">
+                          <tbody className="divide-y divide-[var(--border-clr)]">
                             {loading ? (
                               <tr><td colSpan="6" className="text-center py-10"><Loader2 size={24} className="animate-spin mx-auto text-indigo-500" /></td></tr>
                             ) : jobs.length === 0 ? (
@@ -330,9 +330,9 @@ export default function JobHuntApp() {
                               jobs.map((job, i) => {
                                 const realIndex = jobs.indexOf(job);
                                 return (
-                                  <tr key={i} className="hover:bg-white/[0.02] transition-colors group">
+                                  <tr key={i} className="hover:bg-indigo-500/5 transition-colors group">
                                     <td className="px-6 py-4">
-                                      <span className="font-bold text-white text-sm block truncate">{job.Company}</span>
+                                      <span className="font-bold text-[var(--text-primary)] text-sm block truncate">{job.Company}</span>
                                       <span className="text-[10px] text-slate-600 uppercase font-black">{job.Date || 'Recent'}</span>
                                     </td>
                                     <td className="py-4">
@@ -433,9 +433,9 @@ export default function JobHuntApp() {
             ) : (
               /* Agent Logs View */
               <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-8">
+                <div className="bg-[var(--bg-card)] border border-[var(--border-clr)] rounded-2xl p-8">
                   <div className="flex justify-between items-center mb-8">
-                    <h3 className="text-xs font-black uppercase tracking-widest text-white">Execution Strategy</h3>
+                    <h3 className="text-xs font-black uppercase tracking-widest text-[var(--text-primary)]">Execution Strategy</h3>
                     <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 text-emerald-500 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-500/20">
                       <div className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
                       Step: {agentStatus.step}
@@ -497,13 +497,13 @@ export default function JobHuntApp() {
       {/* Orbit Assistant Sidebar */}
       <div className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-[110] transition-opacity duration-300 ${showAssistant ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={() => setShowAssistant(false)} />
       
-      <aside className={`fixed top-0 right-0 w-[420px] h-full bg-[#11131c] z-[120] shadow-2xl transition-transform duration-500 ease-in-out p-10 flex flex-col ${showAssistant ? 'translate-x-0' : 'translate-x-full'}`}>
+      <aside className={`fixed top-0 right-0 w-[420px] h-full bg-[var(--bg-sidebar)] z-[120] shadow-2xl transition-transform duration-500 ease-in-out p-10 flex flex-col ${showAssistant ? 'translate-x-0' : 'translate-x-full'}`}>
         <div className="flex justify-between items-center mb-10 flex-none">
           <div className="flex items-center gap-3">
             <Bot size={24} className="text-indigo-500" />
-            <h2 className="text-xl font-black uppercase tracking-tighter">Career-Orbit <span className="text-indigo-500 italic">Copilot</span></h2>
+            <h2 className="text-xl font-black uppercase tracking-tighter text-[var(--text-primary)]">Career-Orbit <span className="text-indigo-500 italic">Copilot</span></h2>
           </div>
-          <button onClick={() => setShowAssistant(false)} className="text-slate-500 hover:text-white transition-colors"><X size={24} /></button>
+          <button onClick={() => setShowAssistant(false)} className="text-slate-500 hover:text-indigo-500 transition-colors"><X size={24} /></button>
         </div>
 
         <div className="flex-1 overflow-y-auto space-y-6 pr-2 custom-scrollbar mb-8">

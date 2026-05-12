@@ -20,6 +20,7 @@ from config import KARAN_PROFILE, MODEL_CONFIGS
 # GLOBAL LITELLM SETUP (Local Rate Limiting)
 # ──────────────────────────────────────────────
 litellm.drop_params = True 
+litellm.num_retries = 0 # Global override to disable all internal library retries
 
 # Define the global rate limits and model mappings for local enforcement
 litellm.model_list = [
@@ -62,8 +63,12 @@ litellm.model_list = [
     }
 ]
 
-# Initialize the Router for global rate limiting enforcement
-router = litellm.Router(model_list=litellm.model_list)
+# Initialize the Router with strict zero-retry policy for immediate fallback
+router = litellm.Router(
+    model_list=litellm.model_list,
+    num_retries=0,
+    request_timeout=30
+)
 
 class LiteLLMAgent:
     """A lightweight replacement for DialogAgent using LiteLLM directly."""
