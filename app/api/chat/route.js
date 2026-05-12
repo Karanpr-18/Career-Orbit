@@ -2,8 +2,6 @@ import { NextResponse } from 'next/server';
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const MODELS = [
-  'llama-3.3-70b-versatile',
-  'qwen-2.5-32b',
   'llama-3.1-8b-instant'
 ];
 
@@ -37,10 +35,10 @@ export async function POST(request) {
     for (const model of MODELS) {
       try {
         const result = await callGroq(model, messages);
-        return NextResponse.json({ 
-          success: true, 
+        return NextResponse.json({
+          success: true,
           content: result.choices[0].message.content,
-          model: model 
+          model: model
         });
       } catch (error) {
         console.error(`Model ${model} failed:`, error);

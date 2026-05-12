@@ -4,55 +4,54 @@ import { useState, useEffect, useRef } from 'react';
 import { 
   ExternalLink, Trash2, Search, Briefcase, Clock, 
   Award, Mail, X, Check, Bot, Play, Loader2, 
-  ChevronRight, Send, Sparkles, LayoutDashboard
+  ChevronRight, Send, Sparkles, LayoutDashboard,
+  Terminal, Activity, ShieldCheck, Zap
 } from 'lucide-react';
 
 export default function JobHuntApp() {
-  // Navigation
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [agentLogs, setAgentLogs] = useState('Initializing logs...');
-  const [isLogsLoading, setIsLogsLoading] = useState(false);
-  const [isStopping, setIsStopping] = useState(false);
-  const terminalRef = useRef(null);
   const [showAssistant, setShowAssistant] = useState(false);
-
-  // Data State
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState(null);
-  const [stats, setStats] = useState({ total: 0, mailed: 0, accepted: 0, rejected: 0, interview: 0 });
+  const [greeting, setGreeting] = useState('');
+  const [stats, setStats] = useState({ total: 0, mailed: 0, accepted: 0, rejected: 0, interview: 0, today: 0 });
 
-  // Agent State
   const [agentStatus, setAgentStatus] = useState({
     status: 'idle',
     step: 'Ready',
     progress: { done: 0, total: 50 },
     last_update: 'N/A'
   });
+  const [agentLogs, setAgentLogs] = useState('Initializing telemetry...');
   const [isInitializing, setIsInitializing] = useState(false);
+  const [isStopping, setIsStopping] = useState(false);
+  const terminalRef = useRef(null);
 
-  // Assistant State
-  const [messages, setMessages] = useState([
-    { role: 'assistant', content: "Hello! I'm your AI Job Hunt assistant. How can I help you today?" }
-  ]);
+  const [messages, setMessages] = useState([{ role: 'assistant', content: "Hello! How can I help you with your job search today?" }]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const chatEndRef = useRef(null);
 
   useEffect(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) setGreeting('Good morning');
+    else if (hour < 18) setGreeting('Good afternoon');
+    else setGreeting('Good evening');
+
     setMounted(true);
     fetchJobs();
     fetchAgentStatus();
     fetchLogs();
     const interval = setInterval(() => {
       fetchAgentStatus();
-      if (activeTab === 'dashboard') fetchJobs();
-      if (activeTab === 'agent') fetchLogs();
-    }, 2000); // Poll every 2 seconds for snappier feel
+      fetchJobs();
+      fetchLogs();
+    }, 3000);
     return () => clearInterval(interval);
-  }, [activeTab]);
+  }, []);
 
   useEffect(() => {
     if (terminalRef.current) {
@@ -64,50 +63,15 @@ export default function JobHuntApp() {
     try {
       const response = await fetch('/api/logs');
       const result = await response.json();
-      if (result.success) {
-        setAgentLogs(result.logs);
-      }
-    } catch (error) {
-      console.error('Failed to fetch logs:', error);
-    }
-  };
-
-  useEffect(() => {
-    if (chatEndRef.current) {
-      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messages]);
-
-  const fetchJobs = async () => {
-    try {
-      const response = await fetch('/api/jobs');
-      const result = await response.json();
-      if (result.success) {
-        setJobs(result.data);
-        calculateStats(result.data);
-      }
-    } catch (error) {
-      console.error('Failed to fetch jobs:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchAgentStatus = async () => {
-    try {
-      const response = await fetch('/api/agent');
-      const result = await response.json();
-      if (result.success) {
-        setAgentStatus(result.data);
-      }
-    } catch (error) {
-      console.error('Failed to fetch agent status:', error);
-    }
+      if (result.success) setAgentLogs(result.logs);
+    } catch (error) { console.error(error); }
   };
 
   const calculateStats = (data) => {
-    const s = { total: data.length, mailed: 0, accepted: 0, rejected: 0, interview: 0 };
+    const today = new Date().toISOString().split('T')[0];
+    const s = { total: data.length, mailed: 0, accepted: 0, rejected: 0, interview: 0, today: 0 };
     data.forEach(job => {
+      if (job.Date === today) s.today++;
       const status = (job['Application Status'] || 'Mailed').toLowerCase();
       if (status.includes('accept')) s.accepted++;
       else if (status.includes('reject')) s.rejected++;
@@ -117,55 +81,50 @@ export default function JobHuntApp() {
     setStats(s);
   };
 
+  const fetchJobs = async () => {
+    try {
+      const response = await fetch('/api/jobs');
+      const result = await response.json();
+      if (result.success) {
+        setJobs(result.data);
+        calculateStats(result.data);
+      }
+    } catch (error) { console.error(error); }
+    finally { setLoading(false); }
+  };
+
+  const fetchAgentStatus = async () => {
+    try {
+      const response = await fetch('/api/agent');
+      const result = await response.json();
+      if (result.success) setAgentStatus(result.data);
+    } catch (error) { console.error(error); }
+  };
+
   const initializeAgent = async () => {
     setIsInitializing(true);
     try {
-      const response = await fetch('/api/agent', { 
-        method: 'POST',
-        headers: { 'Cache-Control': 'no-cache' }
-      });
-      const result = await response.json();
-      if (result.success) {
-        // Immediately update status
-        setAgentStatus(prev => ({ ...prev, status: 'running', step: 'Starting...' }));
-        fetchAgentStatus();
-      } else {
-        alert('Agent error: ' + (result.error || 'Unknown error'));
-      }
-    } catch (error) {
-      console.error('Error starting agent:', error);
-      alert('Network error while starting agent');
-    } finally {
-      setIsInitializing(false);
-    }
+      await fetch('/api/agent', { method: 'POST' });
+      fetchAgentStatus();
+    } catch (error) { console.error(error); }
+    finally { setIsInitializing(false); }
   };
 
   const stopAgent = async () => {
     setIsStopping(true);
     try {
-      const response = await fetch('/api/agent', { method: 'DELETE' });
-      const result = await response.json();
-      if (result.success) {
-        setAgentStatus(prev => ({ ...prev, status: 'idle', step: 'Stopping...' }));
-        fetchAgentStatus();
-      } else {
-        alert('Error stopping agent: ' + (result.error || 'Unknown error'));
-      }
-    } catch (error) {
-      console.error('Error stopping agent:', error);
-    } finally {
-      setIsStopping(false);
-    }
+      await fetch('/api/agent', { method: 'DELETE' });
+      fetchAgentStatus();
+    } catch (error) { console.error(error); }
+    finally { setIsStopping(false); }
   };
 
   const sendMessage = async () => {
     if (!input.trim() || isTyping) return;
-    
     const userMsg = { role: 'user', content: input };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsTyping(true);
-
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
@@ -173,14 +132,10 @@ export default function JobHuntApp() {
         body: JSON.stringify({ messages: [...messages, userMsg] })
       });
       const result = await response.json();
-      if (result.success) {
-        setMessages(prev => [...prev, { role: 'assistant', content: result.content }]);
-      }
+      if (result.success) setMessages(prev => [...prev, { role: 'assistant', content: result.content }]);
     } catch (error) {
-      setMessages(prev => [...prev, { role: 'assistant', content: "Sorry, I'm having trouble connecting right now." }]);
-    } finally {
-      setIsTyping(false);
-    }
+      setMessages(prev => [...prev, { role: 'assistant', content: "Connection error." }]);
+    } finally { setIsTyping(false); }
   };
 
   const updateStatus = async (index, newStatus) => {
@@ -191,13 +146,8 @@ export default function JobHuntApp() {
         body: JSON.stringify({ rowIndex: index, status: newStatus }),
       });
       const result = await response.json();
-      if (result.success) {
-        setJobs(result.data);
-        calculateStats(result.data);
-      }
-    } catch (error) {
-      console.error('Failed to update status:', error);
-    }
+      if (result.success) fetchJobs();
+    } catch (error) { console.error('Failed to update status:', error); }
   };
 
   const deleteJob = async (index) => {
@@ -209,376 +159,336 @@ export default function JobHuntApp() {
       });
       const result = await response.json();
       if (result.success) {
-        setJobs(result.data);
-        calculateStats(result.data);
         setDeleteConfirm(null);
+        fetchJobs();
       }
-    } catch (error) {
-      console.error('Failed to delete job:', error);
-    }
+    } catch (error) { console.error('Failed to delete job:', error); }
   };
-
-  const getStatusClass = (status) => {
-    const s = (status || 'mailed').toLowerCase();
-    if (s.includes('accept')) return 'status-accepted';
-    if (s.includes('reject')) return 'status-rejected';
-    if (s.includes('interview')) return 'status-interview';
-    return 'status-mailed';
-  };
-
-  const filteredJobs = jobs.filter(job => {
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      (job.Company || '').toLowerCase().includes(q) ||
-      (job.Role || '').toLowerCase().includes(q) ||
-      (job.Date || '').toLowerCase().includes(q) ||
-      (job['Portal Status'] || '').toLowerCase().includes(q) ||
-      (job['Application Status'] || '').toLowerCase().includes(q)
-    );
-  });
 
   if (!mounted) return null;
 
   return (
-    <div className={`app-wrapper ${showAssistant ? 'assistant-open' : ''}`}>
-      {/* Floating AI Assistant Toggle (Dedicated Button) */}
-      {!showAssistant && (
-        <button 
-          className="assistant-fab shadow-premium"
-          onClick={() => setShowAssistant(true)}
-          title="Open AI Assistant"
-        >
-          <Bot size={24} />
-          <span className="fab-label">Ask AI Assistant</span>
-        </button>
-      )}
-
-      {/* Navigation Sidebar (Mini) */}
-      <nav className="side-nav">
-        <div className="nav-logo">
-          <Sparkles className="text-accent" size={24} />
+    <div className="flex w-full min-h-screen bg-[#0f111a] text-slate-200 overflow-hidden font-sans">
+      
+      {/* Sidebar Navigation */}
+      <nav className="w-72 bg-[#12141d] border-r border-white/5 flex flex-col shrink-0 z-40">
+        <div className="p-8 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-lg">
+            <Sparkles size={20} />
+          </div>
+          <span className="text-xl font-extrabold tracking-tight">Career-Orbit</span>
         </div>
-        <div className="nav-items">
-          <button 
-            className={`nav-btn ${activeTab === 'dashboard' ? 'active' : ''}`}
-            onClick={() => setActiveTab('dashboard')}
-            title="Dashboard"
-          >
-            <LayoutDashboard size={20} />
+
+        <div className="flex-1 px-4 space-y-1 mt-4">
+          <button onClick={() => setActiveTab('dashboard')} className={`w-full flex items-center gap-4 px-6 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'dashboard' ? 'bg-indigo-600/10 text-indigo-400 border-l-4 border-indigo-600' : 'text-slate-500 hover:text-white'}`}>
+            <LayoutDashboard size={18} /> Dashboard
           </button>
-          <button 
-            className={`nav-btn ${activeTab === 'agent' ? 'active' : ''}`}
-            onClick={() => setActiveTab('agent')}
-            title="AI Agent"
-          >
-            <Bot size={20} />
+          <button onClick={() => setActiveTab('logs')} className={`w-full flex items-center gap-4 px-6 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'logs' ? 'bg-indigo-600/10 text-indigo-400 border-l-4 border-indigo-600' : 'text-slate-500 hover:text-white'}`}>
+            <Terminal size={18} /> Agent Logs
           </button>
+
+          <div className="pt-10 px-6">
+            <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-4">Operations</h4>
+            <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4 mb-6">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-[10px] font-bold uppercase text-slate-500">Agent</span>
+                <div className="flex items-center gap-1.5">
+                  <div className={`w-2 h-2 rounded-full ${agentStatus.status === 'running' ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : 'bg-rose-500'}`} />
+                  <span className="text-[10px] font-black uppercase text-slate-300">{agentStatus.status}</span>
+                </div>
+              </div>
+              <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                <div className={`h-full bg-emerald-500 transition-all duration-1000 ${agentStatus.status === 'running' ? 'w-full' : 'w-0'}`} />
+              </div>
+            </div>
+
+            <button onClick={initializeAgent} disabled={agentStatus.status === 'running' || isInitializing} className="w-full py-3 rounded-xl bg-indigo-600 text-white text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 mb-3 disabled:opacity-50">
+              {isInitializing ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} fill="currentColor" />} Start Hunt
+            </button>
+            <button onClick={stopAgent} disabled={agentStatus.status !== 'running' || isStopping} className="w-full py-3 rounded-xl bg-white/5 border border-white/10 text-white text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50">
+              {isStopping ? <Loader2 size={14} className="animate-spin" /> : <X size={14} strokeWidth={3} />} Stop Agent
+            </button>
+          </div>
+        </div>
+
+        <div className="p-6 border-t border-white/5">
+          <div className="flex items-center gap-3 p-2">
+            <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 text-xs font-black">KB</div>
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-white truncate">Karan Bhoriya</p>
+              <p className="text-[10px] text-slate-500">Premium Plan</p>
+            </div>
+          </div>
         </div>
       </nav>
 
-      {/* Backdrop for Sidebar Overlay */}
-      {showAssistant && (
-        <div className="sidebar-backdrop" onClick={() => setShowAssistant(false)} />
-      )}
-
-      <main className="main-content">
-        <div className="container">
-          {/* Header */}
-          <header className="page-header">
-            <div className="header-info">
-              <div className="header-badge">
-                <span className={`header-badge-dot ${agentStatus.status === 'running' ? 'pulse' : ''}`} />
-                {agentStatus.status === 'running' ? `Agent Active: ${agentStatus.step}` : 'System Idle'}
-              </div>
-              <h1>{activeTab === 'dashboard' ? 'Career-Orbit' : 'Agent Command Center'}</h1>
-              <p className="subtitle">
-                {activeTab === 'dashboard' 
-                  ? 'Your Autonomous Agentic Job Portal.' 
-                  : 'Orchestrate your AI-powered job search pipeline.'}
-              </p>
+      {/* Main Workspace */}
+      <main className="flex-1 flex flex-col h-screen relative bg-[#0f111a] overflow-hidden">
+        
+        {/* Top Header */}
+        <header className="h-20 flex items-center justify-between px-10 border-b border-white/5 flex-none bg-[#0f111a]/80 backdrop-blur-xl z-20">
+          <div>
+            <h2 className="text-xl font-bold text-white tracking-tight">{greeting}, Karan</h2>
+            <p className="text-[11px] text-slate-500 font-medium uppercase tracking-widest">Orbit Dashboard &bull; Agentic AI applicant</p>
+          </div>
+          
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={16} />
+              <input 
+                type="text" 
+                placeholder="Search..." 
+                className="bg-white/5 border border-white/10 rounded-xl py-2 pl-11 pr-4 text-sm text-white focus:outline-none focus:border-indigo-500/50 w-64"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
+          </div>
+        </header>
 
-            {activeTab === 'dashboard' && (
-              <div className="search-container">
-                <Search size={16} className="search-icon" />
-                <input
-                  type="text"
-                  className="search-input"
-                  placeholder="Filter applications..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
+        {/* Scrollable Content Container */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-10">
+          <div className="max-w-[1700px] mx-auto space-y-10 pb-20">
+            
+            {activeTab === 'dashboard' ? (
+              <>
+                {/* Stats Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {[
+                    { label: 'Scouted', val: stats.total, color: 'text-indigo-400' },
+                    { label: 'Sent', val: stats.total, color: 'text-blue-400' },
+                    { label: 'Interviews', val: stats.interview, color: 'text-amber-400' },
+                    { label: 'Offers', val: stats.accepted, color: 'text-emerald-400' }
+                  ].map((s, i) => (
+                    <div key={i} className="bg-white/[0.02] border border-white/5 rounded-2xl p-6 hover:bg-white/[0.04] transition-all">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">{s.label}</p>
+                      <h3 className={`text-3xl font-black ${s.color}`}>{s.val}</h3>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Dashboard Main Grid - Expanded for wide view */}
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
+                  {/* Table Column - Now 3/4 width */}
+                  <div className="lg:col-span-3 space-y-6">
+                    <div className="bg-white/[0.02] border border-white/5 rounded-2xl overflow-hidden shadow-2xl">
+                      <div className="px-6 py-4 border-b border-white/5 bg-white/[0.01] flex justify-between items-center">
+                        <h3 className="text-xs font-black uppercase tracking-widest text-slate-300">Live Applications</h3>
+                        <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
+                      </div>
+                      <div className="w-full max-h-[750px] overflow-auto custom-scrollbar">
+                        <table className="w-full text-left table-fixed">
+                          <thead className="sticky top-0 bg-[#12141d] z-20">
+                            <tr className="text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-white/5 shadow-sm">
+                              <th className="px-6 py-4 w-[22%]">Company</th>
+                              <th className="py-4 w-[28%]">Role</th>
+                              <th className="py-4 w-[12%]">Link</th>
+                              <th className="py-4 w-[15%]">Step</th>
+                              <th className="py-4 w-[13%] text-center">Status</th>
+                              <th className="py-4 px-6 w-[10%] text-right">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-white/5">
+                            {loading ? (
+                              <tr><td colSpan="6" className="text-center py-10"><Loader2 size={24} className="animate-spin mx-auto text-indigo-500" /></td></tr>
+                            ) : jobs.length === 0 ? (
+                              <tr><td colSpan="6" className="text-center py-10 text-xs text-slate-500">No data available.</td></tr>
+                            ) : (
+                              jobs.map((job, i) => {
+                                const realIndex = jobs.indexOf(job);
+                                return (
+                                  <tr key={i} className="hover:bg-white/[0.02] transition-colors group">
+                                    <td className="px-6 py-4">
+                                      <span className="font-bold text-white text-sm block truncate">{job.Company}</span>
+                                      <span className="text-[10px] text-slate-600 uppercase font-black">{job.Date || 'Recent'}</span>
+                                    </td>
+                                    <td className="py-4">
+                                      <span className="text-xs text-slate-400 font-medium block truncate">{job.Role}</span>
+                                    </td>
+                                    <td className="py-4 px-4">
+                                      <a href={job.URL} target="_blank" className="text-[10px] text-blue-500 hover:text-blue-400 font-black uppercase tracking-widest transition-all whitespace-nowrap bg-blue-500/5 px-3 py-1.5 rounded-lg border border-blue-500/10">View Link</a>
+                                    </td>
+                                    <td className="py-4 px-4">
+                                      <div className="flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-slate-500" />
+                                        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">{job['Portal Status'] || 'Applied'}</span>
+                                      </div>
+                                    </td>
+                                    <td className="py-4 px-4 text-center">
+                                      <div className={`inline-flex items-center rounded-lg border px-2 py-1 ${
+                                        job['Application Status']?.toLowerCase().includes('accept') ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' :
+                                        job['Application Status']?.toLowerCase().includes('reject') ? 'bg-rose-500/10 border-rose-500/20 text-rose-500' :
+                                        job['Application Status']?.toLowerCase().includes('interview') ? 'bg-amber-500/10 border-amber-500/20 text-amber-500' :
+                                        'bg-indigo-600/10 border-indigo-600/20 text-indigo-400'
+                                      }`}>
+                                        <select 
+                                          className="bg-transparent text-[10px] font-black uppercase tracking-widest outline-none cursor-pointer"
+                                          value={job['Application Status'] || 'Mailed'}
+                                          onChange={(e) => updateStatus(realIndex, e.target.value)}
+                                        >
+                                          <option value="Mailed">Mailed</option>
+                                          <option value="Interview">Interview</option>
+                                          <option value="Accepted">Accepted</option>
+                                          <option value="Rejected">Rejected</option>
+                                        </select>
+                                      </div>
+                                    </td>
+                                    <td className="py-4 px-6">
+                                      <div className="flex items-center gap-2">
+                                        {deleteConfirm === realIndex ? (
+                                          <div className="flex items-center gap-2">
+                                            <button onClick={() => deleteJob(realIndex)} className="text-emerald-500 hover:scale-110 transition-transform"><Check size={14} /></button>
+                                            <button onClick={() => setDeleteConfirm(null)} className="text-slate-500 hover:scale-110 transition-transform"><X size={14} /></button>
+                                          </div>
+                                        ) : (
+                                          <button onClick={() => setDeleteConfirm(realIndex)} className="text-slate-600 hover:text-rose-500 transition-colors"><Trash2 size={14} /></button>
+                                        )}
+                                      </div>
+                                    </td>
+                                  </tr>
+                                );
+                              })
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Sidebar Analytics - Now 1/4 width */}
+                  <div className="lg:col-span-1 space-y-6">
+                    <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-8 flex flex-col items-center">
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-8">Daily Progress</h4>
+                      <div className="relative w-40 h-40 mb-8 flex items-center justify-center">
+                        <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                          <circle cx="50" cy="50" r="44" fill="transparent" stroke="rgba(255,255,255,0.02)" strokeWidth="8" />
+                          <circle 
+                            cx="50" cy="50" r="44" fill="transparent" stroke="#4f46e5" strokeWidth="8" 
+                            strokeDasharray="276" 
+                            strokeDashoffset={276 - (276 * (Math.min(stats.today, 50) / 50))}
+                            strokeLinecap="round"
+                            className="transition-all duration-1000"
+                          />
+                        </svg>
+                        <div className="absolute flex flex-col items-center">
+                          <span className="text-4xl font-black text-white leading-none">{stats.today}</span>
+                          <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest mt-1">Today</span>
+                        </div>
+                      </div>
+                      <div className="w-full space-y-4">
+                        <div className="flex justify-between items-center text-[10px] font-black uppercase text-slate-500">
+                          <span>Daily Target</span>
+                          <span>50 Units</span>
+                        </div>
+                        <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                          <div className="h-full bg-indigo-600 transition-all duration-1000" style={{ width: `${(Math.min(stats.today, 50) / 50) * 100}%` }} />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-indigo-600/10 border border-indigo-600/20 rounded-2xl p-6">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white"><ShieldCheck size={18} /></div>
+                        <h4 className="text-xs font-black uppercase tracking-widest">Active Safety</h4>
+                      </div>
+                      <p className="text-[11px] text-indigo-400 font-medium leading-relaxed">Agent is operating within safety thresholds. Hallucination check enabled for personalized drafts.</p>
+                    </div>
+                  </div>
+
+                </div>
+              </>
+            ) : (
+              /* Agent Logs View */
+              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-8">
+                  <div className="flex justify-between items-center mb-8">
+                    <h3 className="text-xs font-black uppercase tracking-widest text-white">Execution Strategy</h3>
+                    <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 text-emerald-500 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-500/20">
+                      <div className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
+                      Step: {agentStatus.step}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    {['Scouting', 'Reviewing', 'Drafting', 'Mailing'].map((step, i) => (
+                      <div key={i} className={`flex-1 p-4 rounded-xl border text-center transition-all ${agentStatus.step.includes(step) ? 'bg-indigo-600/10 border-indigo-600/40 text-white' : 'bg-white/[0.01] border-white/5 text-slate-600'}`}>
+                        <p className="text-[10px] font-black uppercase tracking-widest">{step}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="bg-[#0a0c10] border border-white/5 rounded-2xl overflow-hidden h-[500px] flex flex-col shadow-2xl">
+                  <div className="px-6 py-3 border-b border-white/5 bg-[#11131c] flex items-center gap-4">
+                    <div className="flex gap-1.5">
+                      <div className="w-2 h-2 rounded-full bg-rose-500" />
+                      <div className="w-2 h-2 rounded-full bg-amber-500" />
+                      <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                    </div>
+                    <span className="text-[11px] font-mono text-slate-500">session_telemetry --raw --verbose</span>
+                  </div>
+                  <div className="flex-1 p-8 font-mono text-xs overflow-y-auto custom-scrollbar" ref={terminalRef}>
+                    <pre className="text-slate-400 whitespace-pre-wrap leading-relaxed">{agentLogs}</pre>
+                  </div>
+                </div>
               </div>
             )}
-          </header>
-
-          {activeTab === 'dashboard' ? (
-            <>
-              {/* Stats Grid */}
-              <section className="stats-grid">
-                <div className="stat-card">
-                  <div className="stat-icon stat-icon-total"><Briefcase size={20} /></div>
-                  <div className="stat-data">
-                    <span className="stat-value">{stats.total}</span>
-                    <span className="stat-label">Total Applied</span>
-                  </div>
-                </div>
-                <div className="stat-card">
-                  <div className="stat-icon stat-icon-pending"><Mail size={20} /></div>
-                  <div className="stat-data">
-                    <span className="stat-value text-mailed">{stats.mailed}</span>
-                    <span className="stat-label">Pending</span>
-                  </div>
-                </div>
-                <div className="stat-card">
-                  <div className="stat-icon stat-icon-interview"><Clock size={20} /></div>
-                  <div className="stat-data">
-                    <span className="stat-value text-interview">{stats.interview}</span>
-                    <span className="stat-label">Interviews</span>
-                  </div>
-                </div>
-                <div className="stat-card">
-                  <div className="stat-icon stat-icon-accepted"><Award size={20} /></div>
-                  <div className="stat-data">
-                    <span className="stat-value text-accepted">{stats.accepted}</span>
-                    <span className="stat-label">Accepted</span>
-                  </div>
-                </div>
-              </section>
-
-              {/* Jobs Table */}
-              <section className="table-container shadow-premium">
-                <div className="table-header">
-                  <span className="table-title">Live Application Feed</span>
-                  <span className="table-count">{filteredJobs.length} results</span>
-                </div>
-                <div className="table-scroll">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Company</th>
-                        <th>Role</th>
-                        <th>Application Link</th>
-                        <th>Step</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {loading ? (
-                        <tr><td colSpan="6" className="text-center py-20"><Loader2 className="spin mx-auto" /></td></tr>
-                      ) : filteredJobs.length === 0 ? (
-                        <tr><td colSpan="6" className="no-results-cell">No records found.</td></tr>
-                      ) : (
-                        filteredJobs.map((job, index) => {
-                          const realIndex = jobs.indexOf(job);
-                          return (
-                            <tr key={realIndex}>
-                              <td className="font-bold">{job.Company}</td>
-                              <td className="text-secondary">{job.Role}</td>
-                              <td>
-                                {job.URL && job.URL !== 'None' ? (
-                                  <a 
-                                    href={job.URL} 
-                                    target="_blank" 
-                                    rel="noreferrer" 
-                                    className="cell-url"
-                                    title={job.URL}
-                                  >
-                                    {job.URL.replace(/^https?:\/\/(www\.)?/, '').split('/')[0]}...
-                                  </a>
-                                ) : (
-                                  <span className="text-muted text-xs">No Link</span>
-                                )}
-                              </td>
-                              <td className="text-xs italic text-muted max-w-[150px] truncate">{job['Portal Status']}</td>
-                              <td>
-                                <select
-                                  className={`status-pill ${getStatusClass(job['Application Status'])}`}
-                                  value={job['Application Status'] || 'Mailed'}
-                                  onChange={(e) => updateStatus(realIndex, e.target.value)}
-                                >
-                                  <option value="Mailed">Mailed</option>
-                                  <option value="Interview">Interview</option>
-                                  <option value="Accepted">Accepted</option>
-                                  <option value="Rejected">Rejected</option>
-                                </select>
-                              </td>
-                              <td>
-                                <div className="actions-cell">
-                                  {job.URL && job.URL !== 'None' && (
-                                    <a href={job.URL} target="_blank" rel="noreferrer" className="btn-icon">
-                                      <ExternalLink size={14} />
-                                    </a>
-                                  )}
-                                  {deleteConfirm === realIndex ? (
-                                    <div className="flex gap-1">
-                                      <button onClick={() => deleteJob(realIndex)} className="btn-icon text-red-500"><Check size={14} /></button>
-                                      <button onClick={() => setDeleteConfirm(null)} className="btn-icon"><X size={14} /></button>
-                                    </div>
-                                  ) : (
-                                    <button onClick={() => setDeleteConfirm(realIndex)} className="btn-icon hover:text-red-500"><Trash2 size={14} /></button>
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </section>
-            </>
-          ) : (
-            /* Agent Control Tab */
-            <section className="agent-center">
-              <div className="agent-grid">
-                {/* Agent Status Card */}
-                <div className="agent-card status-card">
-                  <div className="flex items-center gap-3 mb-6">
-                    <Bot size={24} className="text-accent" />
-                    <h3>Agent Status</h3>
-                    <span className={`status-indicator ${agentStatus.status}`}>
-                      {agentStatus.status.toUpperCase()}
-                    </span>
-                  </div>
-                  
-                  <div className="agent-metrics mb-6">
-                    <div className="metric">
-                      <span className="label">Current Phase</span>
-                      <span className="value">{agentStatus.step}</span>
-                    </div>
-                    <div className="metric">
-                      <span className="label">Last Update</span>
-                      <span className="value">{agentStatus.last_update}</span>
-                    </div>
-                  </div>
-
-                  <div className="progress-container mb-8">
-                    <div className="progress-header">
-                      <span>Mailing Progress</span>
-                      <span>{agentStatus.progress.done} / {agentStatus.progress.total}</span>
-                    </div>
-                    <div className="progress-bar-bg">
-                      <div 
-                        className="progress-bar-fill" 
-                        style={{ width: `${(agentStatus.progress.done / agentStatus.progress.total) * 100}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', width: '100%', marginTop: '1.5rem' }}>
-                    <button 
-                      className={`btn-control btn-start ${agentStatus.status === 'running' ? 'disabled' : ''}`}
-                      onClick={initializeAgent}
-                      disabled={agentStatus.status === 'running' || isInitializing}
-                      style={{ flex: 1, minWidth: '140px' }}
-                    >
-                      {isInitializing ? <Loader2 className="spin" size={18} /> : <Play size={18} />}
-                      <span>Start</span>
-                    </button>
-
-                    <button 
-                      className={`btn-control btn-stop-compact ${agentStatus.status !== 'running' ? 'disabled' : 'pulse-red'}`}
-                      onClick={stopAgent}
-                      disabled={agentStatus.status !== 'running' || isStopping}
-                      style={{ flex: 1, minWidth: '140px' }}
-                    >
-                      {isStopping ? <Loader2 className="spin" size={18} /> : <X size={18} />}
-                      <span>Stop</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Agent Process Info (Moved Up) */}
-                <div className="agent-card info-card">
-                  <h3>Execution Pipeline</h3>
-                  <div className="pipeline-steps">
-                    <div className={`pipeline-step ${['Searching', 'Reviewing', 'Mailing'].includes(agentStatus.step) ? 'active' : ''}`}>
-                      <div className="step-num">1</div>
-                      <div className="step-content">
-                        <h4>Scouting & Sourcing</h4>
-                        <p>Finding high-signal roles across 7+ platforms.</p>
-                      </div>
-                    </div>
-                    <div className={`pipeline-step ${['Reviewing', 'Mailing'].includes(agentStatus.step) ? 'active' : ''}`}>
-                      <div className="step-num">2</div>
-                      <div className="step-content">
-                        <h4>Architectural Review</h4>
-                        <p>Scoring roles against resume and tech stack.</p>
-                      </div>
-                    </div>
-                    <div className={`pipeline-step ${agentStatus.step === 'Mailing' ? 'active' : ''}`}>
-                      <div className="step-num">3</div>
-                      <div className="step-content">
-                        <h4>Dispatch & Cold Email</h4>
-                        <p>Auto-applying and drafting personalized emails.</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Agent CLI Terminal (Moved Down) */}
-                <div className="agent-card terminal-card">
-                  <div className="terminal-header">
-                    <div className="terminal-dots">
-                      <span className="dot red" />
-                      <span className="dot yellow" />
-                      <span className="dot green" />
-                    </div>
-                    <span className="terminal-title">Agent CLI - Realtime Logs</span>
-                  </div>
-                  <div className="terminal-body" ref={terminalRef}>
-                    <pre>{agentLogs}</pre>
-                  </div>
-                </div>
-              </div>
-            </section>
-          )}
+          </div>
         </div>
       </main>
 
-      {/* AI Assistant Sidebar */}
-      <aside className={`assistant-sidebar shadow-premium ${showAssistant ? 'open' : ''}`}>
-        <div className="assistant-header">
-          <div className="flex items-center gap-2">
-            <Bot size={20} className="text-accent" />
-            <h3>AI Assistant</h3>
+      {/* Floating AI Assistant Tag */}
+      <button 
+        onClick={() => setShowAssistant(!showAssistant)} 
+        className="fixed bottom-8 right-8 flex items-center gap-3 px-6 py-3.5 rounded-xl bg-indigo-600 text-white shadow-2xl shadow-indigo-600/40 hover:translate-y-[-4px] active:translate-y-0 transition-all z-[100] group"
+      >
+        <div className="bg-white/10 p-1.5 rounded-lg group-hover:bg-white/20 transition-colors">
+          <Bot size={18} strokeWidth={2.5} />
+        </div>
+        <span className="text-[11px] font-black uppercase tracking-widest">AI Assistant</span>
+      </button>
+
+      {/* Orbit Assistant Sidebar */}
+      <div className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-[110] transition-opacity duration-300 ${showAssistant ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={() => setShowAssistant(false)} />
+      
+      <aside className={`fixed top-0 right-0 w-[420px] h-full bg-[#11131c] z-[120] shadow-2xl transition-transform duration-500 ease-in-out p-10 flex flex-col ${showAssistant ? 'translate-x-0' : 'translate-x-full'}`}>
+        <div className="flex justify-between items-center mb-10 flex-none">
+          <div className="flex items-center gap-3">
+            <Bot size={24} className="text-indigo-500" />
+            <h2 className="text-xl font-black uppercase tracking-tighter">Career-Orbit <span className="text-indigo-500 italic">Copilot</span></h2>
           </div>
-          <button onClick={() => setShowAssistant(false)} className="btn-close">
-            <X size={18} />
-          </button>
+          <button onClick={() => setShowAssistant(false)} className="text-slate-500 hover:text-white transition-colors"><X size={24} /></button>
         </div>
 
-        <div className="chat-messages">
-          {messages.map((msg, i) => (
-            <div key={i} className={`message ${msg.role}`}>
-              {msg.content}
+        <div className="flex-1 overflow-y-auto space-y-6 pr-2 custom-scrollbar mb-8">
+          {messages.map((m, i) => (
+            <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm font-medium leading-relaxed ${m.role === 'user' ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-white/5 text-slate-400 border border-white/5 rounded-tl-none'}`}>
+                {m.content}
+              </div>
             </div>
           ))}
           {isTyping && (
-            <div className="message assistant">
-              <div className="typing">
-                <span className="dot" />
-                <span className="dot" />
-                <span className="dot" />
+            <div className="flex justify-start">
+              <div className="bg-white/5 px-4 py-3 rounded-2xl flex items-center gap-1">
+                <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce" />
+                <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce [animation-delay:0.2s]" />
+                <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce [animation-delay:0.4s]" />
               </div>
             </div>
           )}
           <div ref={chatEndRef} />
         </div>
 
-        <div className="chat-input-container">
+        <div className="relative">
           <input 
             type="text" 
-            placeholder="Ask anything..." 
+            placeholder="Ask Copilot..." 
+            className="w-full bg-black/40 border border-white/5 rounded-2xl py-4 px-6 text-sm text-white focus:outline-none focus:border-indigo-500/50 transition-all pr-14"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
           />
-          <button onClick={sendMessage} disabled={!input.trim() || isTyping}>
+          <button onClick={sendMessage} className="absolute right-3 top-2.5 w-11 h-11 rounded-xl bg-indigo-600 flex items-center justify-center text-white hover:bg-indigo-500 transition-all">
             <Send size={18} />
           </button>
         </div>

@@ -4,20 +4,49 @@ import path from 'path';
 import { spawn } from 'child_process';
 
 const STATUS_PATH = path.join(process.cwd(), 'agent_status.json');
+const TRACKER_PATH = path.join(process.cwd(), 'tracker.csv');
 const AGENT_DIR = process.cwd();
 const VENV_PYTHON = path.join(AGENT_DIR, 'venv', 'bin', 'python3');
 
 export const dynamic = 'force-dynamic';
 
+function getMailedCount() {
+  if (!fs.existsSync(TRACKER_PATH)) return 0;
+  try {
+    const content = fs.readFileSync(TRACKER_PATH, 'utf-8');
+    const lines = content.split('\n').filter(line => line.trim());
+    if (lines.length <= 1) return 0; // Only header or empty
+    
+    let count = 0;
+    // Simple count based on successful statuses
+    const successKeywords = ['mailed', 'applied', 'drafted'];
+    for (let i = 1; i < lines.length; i++) {
+      const lineLower = lines[i].toLowerCase();
+      if (successKeywords.some(kw => lineLower.includes(kw))) {
+        count++;
+      }
+    }
+    return count;
+  } catch (e) {
+    console.error('Error reading tracker:', e);
+    return 0;
+  }
+}
+
 export async function GET() {
   try {
+    const mailedCount = getMailedCount();
     if (!fs.existsSync(STATUS_PATH)) {
       return NextResponse.json({ 
         success: true, 
-        data: { status: 'idle', step: 'Ready', progress: { done: 0, total: 50 } } 
+        data: { status: 'idle', step: 'Ready', progress: { done: mailedCount, total: 50 } } 
       });
     }
     const data = JSON.parse(fs.readFileSync(STATUS_PATH, 'utf-8'));
+    // Ensure we use the latest mailed count even if the file is old
+    if (data.status === 'idle') {
+      data.progress.done = mailedCount;
+    }
     return NextResponse.json({ success: true, data });
   } catch (error) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
@@ -59,10 +88,11 @@ export async function POST() {
     child.unref();
 
     // Initial status
+    const mailedCount = getMailedCount();
     const initialStatus = { 
       status: 'running', 
       step: 'Starting...', 
-      progress: { done: 0, total: 50 },
+      progress: { done: mailedCount, total: 50 },
       pid: pid,
       last_update: new Date().toLocaleTimeString()
     };
@@ -90,10 +120,11 @@ export async function DELETE() {
     }
 
     // Update status to idle
+    const mailedCount = getMailedCount();
     const finalStatus = { 
       status: 'idle', 
       step: 'Stopped by user', 
-      progress: { done: 0, total: 50 },
+      progress: { done: mailedCount, total: 50 },
       last_update: new Date().toLocaleTimeString() 
     };
     fs.writeFileSync(STATUS_PATH, JSON.stringify(finalStatus), 'utf-8');
