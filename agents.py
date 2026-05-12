@@ -42,6 +42,23 @@ litellm.model_list = [
     {
         "model_name": "groq/llama-3.3-70b-versatile",
         "litellm_params": {"model": "groq/llama-3.3-70b-versatile", "rpm": 30}
+    },
+    {
+        "model_name": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
+        "litellm_params": {"model": "groq/meta-llama/llama-4-scout-17b-16e-instruct", "rpm": 30}
+    },
+    # ── Cerebras Models ──
+    {
+        "model_name": "cerebras/zai-glm-4.7",
+        "litellm_params": {"model": "cerebras/zai-glm-4.7", "rpm": 10}
+    },
+    {
+        "model_name": "cerebras/qwen-3-235b-a22b-instruct-2507",
+        "litellm_params": {"model": "cerebras/qwen-3-235b-a22b-instruct-2507", "rpm": 30}
+    },
+    {
+        "model_name": "cerebras/gpt-oss-120b",
+        "litellm_params": {"model": "cerebras/gpt-oss-120b", "rpm": 30}
     }
 ]
 
@@ -181,21 +198,45 @@ If you find no new jobs, return an empty array: []
 # ══════════════════════════════════════════════
 # AGENT B: THE ARCHITECT
 # ══════════════════════════════════════════════
-ARCHITECT_SYS_PROMPT = """You are The Architect. Task: Score JD vs CV and Route.
-RULES:
-- Score 10: LLMs, PyTorch, RAG, LangChain, Agentic AI, Fine-tuning, RLHF.
-- Score 8: Scikit-learn, SQL, Python-DS, ML pipelines.
-- Score 8 (AUTO): If scrape failed/bot-blocked.
-- Score <7: Generic Data Analyst, Excel, Power BI, Business Analyst. (ACTION: SKIP)
+ARCHITECT_SYS_PROMPT = """You are The Architect – a job evaluation and routing specialist.
 
-ROUTING:
-- greenhouse.io, lever.co, workable.com -> "PLAYWRIGHT_APPLY"
-- linkedin, naukri, instahyre, wellfound, unknown -> "SKIP_TO_EMAIL"
+YOUR TASK:
+You will receive a job description text scraped from a URL. You must:
 
-CATEGORIES: "genai_nlp_llm", "deep_learning", "data_pipelines", "classical_ml_research", "general".
+1. SCORE the job based on these rules:
+   - Score 10: Mentions LLMs, PyTorch, Model Optimization, Transformers, HuggingFace, RAG, LangChain, Agentic AI, Fine-tuning, RLHF, Prompt Engineering.
+   - Score 8: Mentions Scikit-learn, SQL, Python-heavy data science, TensorFlow, Keras, Pandas, Statistical modeling, ML pipelines.
+   - Score 8 (AUTO): If the text says "Details could not be scraped due to bot protection", assume it is a valid junior AI/ML role and score it an 8.
+   - Score <7: Generic 'Data Analyst' roles, Excel-heavy, Power BI only, Tableau only, Business Analyst, MIS, Data Entry. These should be SKIPPED.
 
-OUTPUT JSON:
-{"score":int, "action":str, "company":str, "role":str, "key_technologies":list, "jd_category":str, "reason":str}
+2. ROUTE the action based on the URL:
+   - If URL contains 'greenhouse.io', 'lever.co', or 'workable.com': action = "PLAYWRIGHT_APPLY"
+   - If URL contains 'linkedin.com', 'naukri.com', 'instahyre.com', or 'wellfound.com': action = "SKIP_TO_EMAIL"
+   - If login is detected in the page text: action = "SKIP_TO_EMAIL"
+   - If score < 7: action = "SKIP"
+   - For any unknown portal: action = "SKIP_TO_EMAIL" (safer default)
+
+3. EXTRACT key details from the JD.
+
+OUTPUT FORMAT (strict JSON only):
+{
+  "score": 10,
+  "action": "PLAYWRIGHT_APPLY",
+  "company": "Company Name",
+  "role": "Job Title",
+  "key_technologies": ["PyTorch", "LLMs", "RAG"],
+  "jd_category": "genai_nlp_llm",
+  "reason": "One-line justification for the score"
+}
+
+For jd_category, pick ONE of:
+- "genai_nlp_llm" (GenAI, NLP, LLMs)
+- "deep_learning" (Neural networks, PyTorch models)
+- "data_pipelines" (Data engineering, ETL, analytics pipelines)
+- "classical_ml_research" (Scikit-learn, research, statistical ML)
+- "general" (doesn't fit neatly into above)
+
+Return ONLY the JSON object. No markdown, no explanations.
 """
 
 
@@ -241,16 +282,34 @@ Karan Bhoriya
 # ══════════════════════════════════════════════
 # AGENT D: THE SMART FORM FILLER
 # ══════════════════════════════════════════════
-SMART_FORM_FILLER_SYS_PROMPT = """You are a precision Form Filler. Task: Map USER PROFILE/CV to HTML FORM FIELDS.
-RULES:
-- 'Full Name' -> 'name' from profile.
-- 'Current Employer' -> N/A.
-- 'Summary' / 'Why join us?' -> 2-sentence draft from CV.
-- 'LinkedIn' / 'GitHub' / 'Portfolio' -> Profile links.
-- 'is_resume_required' -> true if file upload field exists.
+SMART_FORM_FILLER_SYS_PROMPT = """You are a precision Job Application Assistant.
+Your task is to map a user's personal profile and CV to the input fields found on a job application page.
 
-OUTPUT JSON:
-{"mappings": [{"selector": str, "value": str}], "is_resume_required": bool, "resume_selector": str}
+INPUTS:
+1. FORM FIELDS: A list of HTML tags (inputs, textareas, buttons) with their IDs, Names, Placeholders, and Labels.
+2. USER PROFILE: JSON data about the user (Name, Email, Phone, University, etc.).
+3. CV TEXT: Full text of the user's CV.
+
+YOUR TASK:
+Determine which value from the USER PROFILE or CV goes into which FORM FIELD.
+
+RULES:
+- If a field is 'Full Name', use 'name' from profile.
+- User isn't in any company currently. So set 'Current Employer' as N/A.
+- If a field asks for 'Summary' or 'Why join us?', draft a 2-sentence response based on the CV.
+- If a field asks for 'LinkedIn', 'GitHub', or 'Portfolio', use the corresponding links from the profile.
+- Return a JSON object where keys are the 'id' or 'name' of the field, and values are the text to type.
+
+OUTPUT FORMAT (strict JSON):
+{
+  "mappings": [
+    {"selector": "#first_name", "value": "Karan"},
+    {"selector": "input[name='email']", "value": "karan@example.com"},
+    ...
+  ],
+  "is_resume_required": true,
+  "resume_selector": "#resume-upload"
+}
 """
 
 

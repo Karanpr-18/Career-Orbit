@@ -15,6 +15,8 @@ load_dotenv(override=True)
 # ──────────────────────────────────────────────
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 os.environ["GROQ_API_KEY"] = GROQ_API_KEY  # LiteLLM picks this up automatically
+CEREBRAS_API_KEY = os.getenv("CEREBRAS_API_KEY", "")
+os.environ["CEREBRAS_API_KEY"] = CEREBRAS_API_KEY
 SERPER_API_KEY = os.getenv("SERPER_API_KEY", "")
 os.environ["SERPER_API_KEY"] = SERPER_API_KEY
 
@@ -145,7 +147,7 @@ MODEL_CONFIGS = [
     {
         "config_name": "architect_model_config",
         "model_type": "litellm_chat",
-        "model_name": "groq/openai/gpt-oss-120b",
+        "model_name": "cerebras/qwen-3-235b-a22b-instruct-2507",
         "generate_args": {
             "temperature": 0.2,
             "max_tokens": 4000,
@@ -154,7 +156,7 @@ MODEL_CONFIGS = [
     {
         "config_name": "architect_fallback_model",
         "model_type": "litellm_chat",
-        "model_name": "groq/qwen/qwen3-32b",
+        "model_name": "groq/openai/gpt-oss-120b",
         "generate_args": {
             "temperature": 0.2,
             "max_tokens": 4000,
@@ -171,7 +173,7 @@ MODEL_CONFIGS = [
     {
         "config_name": "ghostwriter_fallback_model",
         "model_type": "litellm_chat",
-        "model_name": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
+        "model_name": "cerebras/zai-glm-4.7",
         "generate_args": {
             "temperature": 0.6,
         },
@@ -179,7 +181,7 @@ MODEL_CONFIGS = [
     {
         "config_name": "investigator_model_config",
         "model_type": "litellm_chat",
-        "model_name": "groq/qwen/qwen3-32b",
+        "model_name": "cerebras/qwen-3-235b-a22b-instruct-2507",
         "generate_args": {
             "temperature": 0.1,
             "max_tokens": 4000,
@@ -197,7 +199,7 @@ MODEL_CONFIGS = [
     {
         "config_name": "smart_form_filler_config",
         "model_type": "litellm_chat",
-        "model_name": "groq/openai/gpt-oss-120b",
+        "model_name": "groq/llama-3.3-70b-versatile",
         "generate_args": {
             "temperature": 0.1, 
             "max_tokens": 4000,
@@ -206,7 +208,7 @@ MODEL_CONFIGS = [
     {
         "config_name": "smart_form_filler_fallback",
         "model_type": "litellm_chat",
-        "model_name": "groq/openai/gpt-oss-20b",
+        "model_name": "groq/openai/gpt-oss-120b",
         "generate_args": {
             "temperature": 0.2,
             "max_tokens": 4000,

@@ -76,30 +76,16 @@ def serper_search(query: str) -> str:
         logger.error(f"[Scout] Serper search failed for '{query}': {e}")
         return "Search Error: Check API Credits."
 
-def clean_job_description(text: str) -> str:
-    """
-    Strips noise (URLs, extra whitespace, image tags) to save tokens.
-    """
-    if not text: return ""
-    # Remove image markdown
-    text = re.sub(r'!\[.*?\]\(.*?\)', '', text)
-    # Remove generic URLs (not needed for JD analysis)
-    text = re.sub(r'http[s]?://\S+', '', text)
-    # Collapse multiple newlines
-    text = re.sub(r'\n\s*\n', '\n\n', text)
-    # Strip leading/trailing whitespace
-    return text.strip()
-
 def crawl_page(url: str) -> str:
     """
     Crawl a page using Crawl4AI to bypass bot protection.
-    Returns cleaned markdown text.
+    Returns the raw markdown text.
     """
     async def _crawl_async():
         async with AsyncWebCrawler() as crawler:
             result = await crawler.arun(url=url, bypass_cache=True)
-            # Clean and truncate to save tokens while keeping core JD
-            return clean_job_description(result.markdown)[:2000]
+            # Increase limit for high-tier models
+            return result.markdown[:8000]
 
     try:
         return asyncio.run(_crawl_async())
@@ -327,13 +313,20 @@ def count_successful_sends(tracker_path: str = "") -> int:
     if not tracker_path: tracker_path = TRACKER_CSV_PATH
     if not os.path.exists(tracker_path): return 0
     count = 0
+    today = datetime.now().strftime("%Y-%m-%d")
     try:
         with open(tracker_path, "r", encoding="utf-8") as f:
             reader = csv.reader(f)
-            # Find the 'Application Status' column index (usually the last one)
+            header = next(reader, None) # Skip header
+            if not header: return 0
+            
             for row in reader:
-                if not row: continue
+                if len(row) < 7: continue
                 # Success statuses: Mailed, Applied, Drafted
+                # Date is usually index 0
+                date = row[0].strip("'\"")
+                if date != today: continue
+                
                 status = row[-1].lower()
                 if any(s in status for s in ["mailed", "applied", "drafted"]):
                     count += 1

@@ -18,11 +18,17 @@ function getMailedCount() {
     if (lines.length <= 1) return 0; // Only header or empty
     
     let count = 0;
-    // Simple count based on successful statuses
+    const today = new Date().toISOString().split('T')[0];
     const successKeywords = ['mailed', 'applied', 'drafted'];
     for (let i = 1; i < lines.length; i++) {
-      const lineLower = lines[i].toLowerCase();
-      if (successKeywords.some(kw => lineLower.includes(kw))) {
+      const columns = lines[i].split(',');
+      if (columns.length < 7) continue;
+      
+      const date = columns[0].replace(/['"]/g, '').trim();
+      if (date !== today) continue;
+
+      const status = columns[columns.length - 1].toLowerCase().replace(/['"]/g, '').trim();
+      if (successKeywords.some(kw => status.includes(kw))) {
         count++;
       }
     }
