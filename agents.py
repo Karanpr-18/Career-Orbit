@@ -116,18 +116,12 @@ class LiteLLMAgent:
                 error_msg = str(e)
                 # Check for TPD (Tokens Per Day) or other major limits for Dashboard visibility
                 if "Tokens Per Day" in error_msg or "daily" in error_msg.lower():
-                    logger.critical(f"\n🛑 [LIMIT HIT] {self.model} has exhausted its TOKENS PER DAY (TPD) quota!")
+                    logger.critical(f"\n🛑 [LIMIT HIT] {self.model} has exhausted its TPD quota!")
                     logger.critical(f"📊 Model Status: EXHAUSTED | Switching to Fallback Strategy...\n")
 
-                # Catch both specific rate limits and generic failures for stability
-                if attempt < max_retries - 1:
-                    # Exponential backoff: 2s, 4s, 8s, 16s...
-                    wait_time = initial_backoff * (2 ** attempt)
-                    logger.warning(f"[{self.name}] Call failed: {str(e)[:100]}. Retrying in {wait_time}s... (Attempt {attempt+1}/{max_retries})")
-                    time.sleep(wait_time)
-                elif self.fallback_model and self.model != self.fallback_model:
-                    # Final attempt: Try the fallback model via router
-                    logger.warning(f"[{self.name}] Primary model failed. Swapping to FALLBACK: {self.fallback_model}")
+                # IMMEDIATELY TRY FALLBACK ON FIRST FAILURE (No waiting)
+                if attempt == 0 and self.fallback_model and self.model != self.fallback_model:
+                    logger.warning(f"[{self.name}] Primary model failed. Attempting IMMEDIATE FALLBACK to: {self.fallback_model}")
                     try:
                         response = router.completion(
                             model=self.fallback_model,
@@ -139,14 +133,16 @@ class LiteLLMAgent:
                         else: self.memory.pop()
                         return Msg(name=self.name, content=reply_text, role="assistant")
                     except Exception as fe:
-                        fe_msg = str(fe)
-                        if "Tokens Per Day" in fe_msg or "daily" in fe_msg.lower():
-                            logger.critical(f"🚨 [CRITICAL] Fallback model {self.fallback_model} ALSO exhausted its TPD quota!")
-                        logger.error(f"[{self.name}] Fallback ALSO failed: {fe_msg}")
-                        return Msg(name=self.name, content=f"ERROR: Both primary and fallback models failed. {fe_msg}", role="assistant")
+                        logger.error(f"[{self.name}] Immediate fallback also failed: {str(fe)[:100]}")
+                        # If fallback fails, we continue the loop to the next attempt (which will have backoff)
+                
+                # If we've tried both or have no fallback, use standard retry with backoff for stability
+                if attempt < max_retries - 1:
+                    wait_time = initial_backoff * (2 ** attempt)
+                    logger.warning(f"[{self.name}] Both models/primary failed. Retrying with backoff in {wait_time}s... (Attempt {attempt+1}/{max_retries})")
+                    time.sleep(wait_time)
                 else:
-                    logger.error(f"[{self.name}] Max retries reached. Error: {e}")
-                    # Return a safe error message instead of crashing the 50-email loop
+                    logger.error(f"[{self.name}] Max retries reached. Primary and Fallback both failed.")
                     return Msg(name=self.name, content="ERROR: LLM call failed after multiple retries.", role="assistant")
 
 
