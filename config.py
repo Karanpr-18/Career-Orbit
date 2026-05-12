@@ -15,8 +15,8 @@ load_dotenv(override=True)
 # ──────────────────────────────────────────────
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 os.environ["GROQ_API_KEY"] = GROQ_API_KEY  # LiteLLM picks this up automatically
-CEREBRAS_API_KEY = os.getenv("CEREBRAS_API_KEY", "")
-os.environ["CEREBRAS_API_KEY"] = CEREBRAS_API_KEY
+MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY", "")
+os.environ["MISTRAL_API_KEY"] = MISTRAL_API_KEY
 SERPER_API_KEY = os.getenv("SERPER_API_KEY", "")
 os.environ["SERPER_API_KEY"] = SERPER_API_KEY
 
@@ -139,7 +139,7 @@ MODEL_CONFIGS = [
     {
         "config_name": "scout_model_config",
         "model_type": "litellm_chat",
-        "model_name": "mistral/mistral-small-latest",
+        "model_name": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
         "generate_args": {
             "temperature": 0.3,
         },
@@ -156,7 +156,7 @@ MODEL_CONFIGS = [
     {
         "config_name": "architect_fallback_model",
         "model_type": "litellm_chat",
-        "model_name": "groq/openai/gpt-oss-120b",
+        "model_name": "groq/llama-3.3-70b-versatile",
         "generate_args": {
             "temperature": 0.2,
             "max_tokens": 4000,
@@ -181,7 +181,7 @@ MODEL_CONFIGS = [
     {
         "config_name": "investigator_model_config",
         "model_type": "litellm_chat",
-        "model_name": "mistral/mistral-large-latest",
+        "model_name": "mistral/mistral-medium-latest",
         "generate_args": {
             "temperature": 0.1,
             "max_tokens": 4000,
@@ -199,7 +199,7 @@ MODEL_CONFIGS = [
     {
         "config_name": "smart_form_filler_config",
         "model_type": "litellm_chat",
-        "model_name": "groq/llama-3.3-70b-versatile",
+        "model_name": "groq/openai/gpt-oss-120b",
         "generate_args": {
             "temperature": 0.1, 
             "max_tokens": 4000,
@@ -208,7 +208,7 @@ MODEL_CONFIGS = [
     {
         "config_name": "smart_form_filler_fallback",
         "model_type": "litellm_chat",
-        "model_name": "groq/openai/gpt-oss-120b",
+        "model_name": "groq/openai/gpt-oss-20b",
         "generate_args": {
             "temperature": 0.2,
             "max_tokens": 4000,

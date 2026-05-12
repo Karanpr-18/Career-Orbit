@@ -48,18 +48,18 @@ litellm.model_list = [
         "model_name": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
         "litellm_params": {"model": "groq/meta-llama/llama-4-scout-17b-16e-instruct", "rpm": 30}
     },
-    # ── Cerebras Models ──
+    # ── Mistral Models ──
     {
-        "model_name": "cerebras/zai-glm-4.7",
-        "litellm_params": {"model": "cerebras/zai-glm-4.7", "rpm": 10}
+        "model_name": "mistral/mistral-large-latest",
+        "litellm_params": {"model": "mistral/mistral-large-latest"}
     },
     {
-        "model_name": "cerebras/qwen-3-235b-a22b-instruct-2507",
-        "litellm_params": {"model": "cerebras/qwen-3-235b-a22b-instruct-2507", "rpm": 30}
+        "model_name": "mistral/mistral-medium-latest",
+        "litellm_params": {"model": "mistral/mistral-medium-latest"}
     },
     {
-        "model_name": "cerebras/gpt-oss-120b",
-        "litellm_params": {"model": "cerebras/gpt-oss-120b", "rpm": 30}
+        "model_name": "mistral/mistral-small-latest",
+        "litellm_params": {"model": "mistral/mistral-small-latest"}
     }
 ]
 
