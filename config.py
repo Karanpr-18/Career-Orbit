@@ -181,7 +181,7 @@ MODEL_CONFIGS = [
     {
         "config_name": "investigator_model_config",
         "model_type": "litellm_chat",
-        "model_name": "cerebras/qwen-3-235b-a22b-instruct-2507",
+        "model_name": "cerebras/gpt-oss-120b",
         "generate_args": {
             "temperature": 0.1,
             "max_tokens": 4000,
