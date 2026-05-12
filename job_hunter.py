@@ -441,7 +441,7 @@ def _fallback_email(analysis: dict) -> str:
  
  I'm Karan, a B.Tech AIML student specializing in Agentic AI and GenAI. I saw the {analysis['role']} opening and had to reach out.
  
- I've built end-to-end LLM platforms like TalentAI and autonomous agents like Career-Orbit. During my Humana internship, I also engineered Python pipelines that cut QA time by 95% (4 days to 2 hours).
+ I've built end-to-end LLM platforms like TalentAI and autonomous multi agent-agents system like Career-Orbit. During my Humana internship, I also engineered Python pipelines that cut QA time by 95% (4 days to 2 hours).
  
  I'd love to bring that same focus on GenAI efficiency to {analysis['company']}. My links are below.
 

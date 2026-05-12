@@ -210,7 +210,10 @@ You will receive a job description text scraped from a URL. You must:
    - Score 10: Mentions LLMs, PyTorch, Model Optimization, Transformers, HuggingFace, RAG, LangChain, Agentic AI, Fine-tuning, RLHF, Prompt Engineering.
    - Score 8: Mentions Scikit-learn, SQL, Python-heavy data science, TensorFlow, Keras, Pandas, Statistical modeling, ML pipelines.
    - Score 8 (AUTO): If the text says "Details could not be scraped due to bot protection", assume it is a valid junior AI/ML role and score it an 8.
-   - Score <7: Generic 'Data Analyst' roles, Excel-heavy, Power BI only, Tableau only, Business Analyst, MIS, Data Entry. These should be SKIPPED.
+   - Score <7 (AUTO-SKIP):
+     * If the job is outside India and is NOT explicitly 'Remote'.
+     * If the job requires a specific nationality or residency (e.g. 'US Citizens only', 'EU residents only').
+     * Generic 'Data Analyst' roles, Excel-heavy, Power BI only, Tableau only, Business Analyst, MIS, Data Entry.
 
 2. ROUTE the action based on the URL:
    - If URL contains 'greenhouse.io', 'lever.co', or 'workable.com': action = "PLAYWRIGHT_APPLY"
@@ -259,7 +262,7 @@ CRITICAL FORMATTING RULES:
 STRICT WRITING STYLE:
 - **Tone**: Engineering-focused, results-driven, "Gen-Z Professional" (no fluff).
 - **Metric**: Mention cutting QA time by 95% at Humana.
-- **Projects**: Match the project to the JD (TalentAI, PyTorch, etc.).
+- **Projects**: Match the project to the JD (TalentAI- Ai powered Hr Management system, PyTorch, Career-Orbit-multi agent job hunting agent etc.).
 - **Research Paper**: If the JD mentions "research", "academic", "publications", etc. then mention the research paper("Emotion classification on GoEmotions).
 
 EMAIL STRUCTURE EXAMPLE:
