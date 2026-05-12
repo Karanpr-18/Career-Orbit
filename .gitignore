@@ -24,10 +24,9 @@ agent_logs.txt
 # Personal Documents
 my_cv.pdf
 my_resume.pdf
-*resume*
-*cv*
-*Resume*
-*CV*
+RESUME.md
+CV.md
+MY_PROFILE.md
 *.pdf
 *.docx
 *.doc

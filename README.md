@@ -1,116 +1,104 @@
 <div align="center">
   
 # Career-Orbit 🚀
-### *Autonomous Multi-Agent Job Discovery & Application Platform*
+### *Your Personal Autonomous AI Job Hunting Team*
 
 [![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org/)
 [![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python)](https://www.python.org/)
 [![Groq](https://img.shields.io/badge/Groq-LPU_Powered-orange)](https://groq.com/)
 [![Playwright](https://img.shields.io/badge/Playwright-Automation-green?logo=playwright)](https://playwright.dev/)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
 
-**Career-Orbit** is an advanced open-source intelligence platform designed to democratize the job search process. By providing candidates with their own autonomous "Agentic Team," Career-Orbit automates lead discovery, technical alignment review, and personalized outreach.
+**Career-Orbit** is an open-source platform that turns the exhausting process of job hunting into an automated, background operation. It gives you a team of specialized AI agents that find jobs, evaluate if you are a good fit, fill out applications, and draft personalized cold emails on your behalf.
 
 </div>
 
 ---
 
-## 🌟 Key Features
+## 🤔 The Problem vs. The Solution
 
-* **Multi-Agent Orchestration:** Powered by a suite of specialized LLM agents (Scout, Architect, Ghostwriter, Dispatcher) working in tandem.
-* **Next.js Command Center:** A real-time telemetry dashboard to monitor agent progress, conversion funnels, and manage processes safely.
-* **Automated ATS Form Filling:** Uses Playwright alongside an LLM to smartly map your profile to complex job application forms.
-* **Hyper-Personalized Cold Emails:** Evaluates Job Descriptions against your CV to draft highly specific, non-hallucinated outreach emails directly to your Gmail drafts.
-* **100% Local Execution:** Runs locally to maintain privacy and bypass serverless timeouts for heavy browser automation tasks.
+**The Problem:** Job hunting is a full-time job. You spend hours searching LinkedIn, reading through dense job descriptions, deciding if you are qualified, typing your details into identical portal forms, and writing cover letters.
+
+**The Solution:** Career-Orbit automates the entire funnel. You start the system, and it runs in the background. It reads your CV once, understands your skills, and then scours the internet applying for jobs and drafting emails that sound exactly like you wrote them.
 
 ---
 
-## 🏛️ In-Depth Technical Architecture
+## 🤖 How It Works: Meet Your AI Team
 
-Career-Orbit utilizes a pipeline designed to handle high-concurrency tasks while maintaining strict data integrity and rate-limiting compliance.
+Career-Orbit isn't just one big script; it is a team of four distinct AI "employees" working together:
 
-### 🧠 The Core Agent Intelligence
+### 1. 🔍 The Scout (The Researcher)
+The Scout browses platforms like LinkedIn, Wellfound, and Greenhouse. It searches for specific roles (like "AI Intern") and reads the results. Its only job is to filter out the noise—ignoring senior roles, irrelevant locations, or old postings, and building a clean list of fresh leads.
 
-| Agent | Responsibility | In-Depth Logic |
-| :--- | :--- | :--- |
-| **🔍 Scout** | **Market Intelligence** | Executes multi-platform searches. Uses LLM semantic filtering to discard mismatched seniority levels. |
-| **🏗️ Architect** | **Technical Alignment** | Performs **Project-to-JD Matching**. Scores roles (0-10) based on tech stack, research, and proof-of-work. |
-| **✍️ Ghostwriter** | **Strategic Outreach** | Crafts personalized emails using a professional tone. Enforces strict length limits and prevents hallucination. |
-| **🤖 Dispatcher** | **Execution & Automation**| Handles Playwright browser injection for applications and Gmail API integration for drafting emails. |
+### 2. 🏗️ The Architect (The Evaluator)
+The Architect takes the leads found by the Scout and reads the full Job Description. It then compares the job requirements directly against your CV. 
+* *Does this job require PyTorch? Do you have PyTorch on your resume?* 
+The Architect scores the job out of 10. If the score is too low, it skips it. If it's a match, it decides whether to auto-apply on the website or send a cold email.
 
-### 🛠️ Data Flow
+### 3. ✍️ The Ghostwriter (The Communicator)
+If the Architect decides a cold email is the best approach, the Ghostwriter takes over. It writes a short, punchy, highly personalized email to the hiring manager. It doesn't use generic fluff; it specifically mentions *your* past projects that solve the problems listed in *their* job description.
 
-```mermaid
-graph TD
-    A[User Starts Agent] --> B[Scout: Web Search & Platform Scraping]
-    B --> C[Phase 1: Filter Mismatched Roles]
-    C --> D[Architect: Scoring & Project Alignment]
-    D --> E{Action: Form or Email?}
-    E -- Form --> F[Dispatcher: Playwright Autofill]
-    E -- Email --> G[Investigator: Find Hiring Manager]
-    G --> H[Ghostwriter: Draft Generation]
-    H --> I[Dispatcher: Gmail API Draft]
-    F --> J[Update Tracker & Dashboard]
-    I --> J
-```
+### 4. 🚀 The Dispatcher (The Executor)
+The Dispatcher actually gets things done. It takes control of a web browser (using Playwright) to automatically fill out application forms, upload your resume, and answer questions. If it's sending an email, it finds the hiring manager's address, verifies it's real, and saves the email securely in your Gmail Drafts folder for you to review.
 
 ---
 
-## 🚀 Installation & Setup
+## 🖥️ The Command Center
 
-### 1. Prerequisites
-- **Python 3.10+** (Virtual environment highly recommended)
-- **Node.js 18+** (For the Dashboard)
-- **Groq API Key** (For ultra-fast LLM inference)
-- **Google OAuth2 Credentials** (`credentials.json` for Gmail API)
+You don't need to stare at a terminal window. Career-Orbit comes with a beautiful, real-time dashboard built in Next.js. 
 
-### 2. Local Setup
+From the dashboard, you can:
+* **Start and Stop the Agents:** Safely launch or kill the AI team with a click.
+* **Watch Them Work:** A live feed shows you exactly what the agents are thinking, which jobs they are reading, and what actions they are taking.
+* **Track Your Funnel:** View analytics on how many jobs were found, how many were skipped, and how many successful applications or drafts were generated.
+
+---
+
+## ⚙️ Installation & Setup
+
+### 1. What You Need
+- **Python 3.10+**
+- **Node.js 18+**
+- A free **Groq API Key** (for lightning-fast AI processing).
+- **Google OAuth2 Credentials** (so the agent can safely create drafts in your Gmail).
+
+### 2. Getting Started
 ```bash
 # Clone the repository
 git clone https://github.com/Karanpr-18/Career-Orbit.git
 cd Career-Orbit
 
-# Setup Python Backend
+# Setup the Python AI Backend
 python -m venv venv
-source venv/bin/activate  # Or `venv\Scripts\activate` on Windows
+source venv/bin/activate  # (Use `venv\Scripts\activate` on Windows)
 pip install -r requirements.txt
 playwright install chromium
 
-# Setup Next.js Dashboard
+# Setup the Dashboard
 npm install
 npm run dev
 ```
 
-### 3. Environment Configuration
-Create a `.env` file in the root directory:
-```env
-GROQ_API_KEY=your_groq_key
-SERPER_API_KEY=your_serper_key
-EMAILABLE_API_KEY=your_emailable_key
-RESUME_PATH=/path/to/my_resume.pdf
-MAX_APPLICATIONS_PER_DAY=50
-```
+### 3. Configure Your Profile
+Create a `.env` file in the root folder with your keys. Then, open `config.py` and drop your resume file in the folder. The AI will read it automatically.
 
 ---
 
-## 🗺️ Roadmap & Future Improvements (Call for Contributors!)
+## 🚧 Open Challenges & Technical Limitations
 
-We are actively working to make Career-Orbit **100% free and independent** of commercial API limits. We welcome Pull Requests for the following planned improvements:
+Building a fully autonomous AI agent that interacts with the real web is incredibly difficult. Here are the engineering challenges the project currently faces, which we welcome the open-source community to help solve:
 
-- [ ] **Migrate to SQLite:** Replace `tracker.csv` with a local SQLite database to prevent I/O locking between the Next.js frontend and Python backend.
-- [ ] **100% Free Search:** Replace the paid `Serper.dev` API with the free `duckduckgo-search` Python package.
-- [ ] **Local Email Verification:** Replace the `Emailable` API by implementing local MX record resolution and SMTP pinging.
-- [ ] **Markdown Resumes:** Transition from `pypdf` extraction to Markdown (`.md`) based CVs to drastically improve LLM context ingestion and formatting.
-- [ ] **Stealth Browser Automation:** Integrate `playwright-stealth` or `undetected-chromedriver` to bypass aggressive ATS bot protections (Cloudflare/DataDome).
-- [ ] **Asynchronous Processing:** Implement `asyncio` for the Architect phase to evaluate multiple job descriptions concurrently.
-- [ ] **Draft Management UI:** Add a feature to the Next.js dashboard to fetch, review, and send Gmail drafts directly from the Command Center.
+- **Bypassing Bot Protection:** Modern job portals (like Greenhouse and Lever) use aggressive anti-bot software like Cloudflare. Our browser automation sometimes gets blocked. Integrating advanced "stealth" browser techniques is an ongoing battle.
+- **100% Free Search:** We currently rely on the `Serper.dev` API to search Google because free alternatives (like DuckDuckGo scraping) aggressively IP-ban automated agents. Finding a stable, totally free search architecture is a top priority.
+- **Data Concurrency:** The dashboard and the AI backend currently share data via a simple `tracker.csv` file. This can cause read/write locks. Migrating to a robust local SQLite database is the next architectural step.
+- **Parsing Resumes:** We currently extract text from PDF resumes. PDFs are notoriously bad for data extraction, often ruining the formatting. Moving the system to ingest pure Markdown (`.md`) resumes will help the AI understand your skills much better.
+- **Email Verification Limits:** We use a commercial API (Emailable) to verify hiring managers' emails so your account doesn't get flagged for spam. Building a reliable, free local verifier (pinging SMTP servers directly) is complex but highly desired.
 
 ---
 
 ## 🤝 Contributing
 
-Career-Orbit is an open-source model for the world. We encourage developers to expand its capabilities! 
+We want to make job hunting completely effortless for everyone. If you can help solve any of the challenges above, we'd love your contributions! 
 
 1. Fork the Project
 2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)

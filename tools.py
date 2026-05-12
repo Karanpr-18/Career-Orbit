@@ -20,7 +20,6 @@ import time
 import logging
 import asyncio
 import requests
-import pypdf
 from datetime import datetime
 from typing import Optional
 from urllib.parse import urlparse
@@ -427,13 +426,19 @@ def search_hiring_email(company_name: str, job_url: str = "", jd_text: str = "")
     return "Not Found"
 
 def extract_cv_text(pdf_path: str) -> str:
-    if not os.path.exists(pdf_path): return "Software Engineer with Python experience."
-    try:
-        text = ""
-        with open(pdf_path, "rb") as f:
-            reader = pypdf.PdfReader(f)
-            for page in reader.pages: 
-                extracted = page.extract_text()
-                if extracted: text += extracted + "\n"
-        return text.strip()
-    except: return "Software Engineer with Python experience."
+    # --- TOKEN OPTIMIZED: Exclusive Markdown Loader ---
+    base_dir = os.path.dirname(pdf_path)
+    file_name = os.path.basename(pdf_path).lower()
+    
+    target_md = "RESUME.md" if "resume" in file_name else "CV.md"
+    md_path = os.path.join(base_dir, target_md)
+    
+    if os.path.exists(md_path):
+        try:
+            with open(md_path, "r", encoding="utf-8") as f:
+                return f.read().strip()
+        except Exception as e:
+            logger.warning(f"[Loader] Failed to read {target_md}: {e}")
+
+    # If MD is missing, return a descriptive error for the agent
+    return "ERROR: Resume/CV Markdown file not found. Please ensure RESUME.md or CV.md exists."
