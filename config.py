@@ -53,6 +53,15 @@ SEARCH_QUERIES = [
     "Machine Learning research intern India",
     "Deep Learning Intern India",
     "AI Software Engineer Junior India",
+    "Remote AI ML Internship",
+    "LLM Engineer Internship",
+    "Prompt Engineering Intern",
+    "GenAI Developer Internship Remote",
+    "Junior AI Engineer Remote Worldwide",
+    "Computer Vision Intern India",
+    "NLP Engineer Internship",
+    "AI Product Manager Intern",
+    "Machine Learning Engineer Internship Remote",
 ]
 
 TARGET_SITES = [

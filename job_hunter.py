@@ -200,12 +200,12 @@ def run_scout_phase(scout_agent, existing_urls: set) -> list[dict]:
         write_status(step=f"Scouting: {query}", done=count_successful_sends(), total=50)
         
         # Search across all sites
-        results_str = serper_search(f'{query} "India"')
+        results_str = serper_search(query)
         all_raw_results.extend(_parse_serper_results(results_str))
 
         # Search top 3 most productive sites specifically to save time/API quota
         for site in TARGET_SITES[:3]: 
-            site_query = f'site:{site} "{query}" "India"'
+            site_query = f'site:{site} "{query}"'
             results_str = serper_search(site_query)
             all_raw_results.extend(_parse_serper_results(results_str))
 
@@ -229,13 +229,17 @@ def run_scout_phase(scout_agent, existing_urls: set) -> list[dict]:
     filtered_jobs = []
     chunk_size = 20  # Small chunks to stay within 6000 TPM limit
     
-    for i in range(0, min(len(unique_results), 100), chunk_size):
+    for i in range(0, min(len(unique_results), 300), chunk_size):
         chunk = unique_results[i:i+chunk_size]
         search_summary = json.dumps(chunk, indent=1)
         
         scout_prompt = (
-            f"Filter these job postings to ONLY keep AI/ML/Data Science roles suitable for a student or junior (Internships, Junior, Associate). "
-            f"Exclude Senior/Lead roles with 3+ years experience. Return a JSON array with 'title', 'url', and 'company'.\n\n"
+            "Filter these job postings to ONLY keep AI/ML/Data Science roles suitable for a student or junior (Internships, Junior, Associate).\n"
+            "STRICT FILTERS:\n"
+            "1. LOCATION: If the job is outside India, it MUST be explicitly 'Remote'. Discard international roles that require relocation.\n"
+            "2. NATIONALITY: Exclude jobs that mention specific citizenship requirements (e.g., 'US Citizen only', 'EU residents only').\n"
+            "3. SENIORITY: Exclude Senior/Lead roles with 3+ years experience.\n\n"
+            "Return a JSON array with 'title', 'url', and 'company'.\n\n"
             f"Results:\n{search_summary}"
         )
         
