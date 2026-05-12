@@ -1,7 +1,7 @@
 <div align="center">
   
 # Career-Orbit 🚀
-### *Your Personal Autonomous AI Job Hunting Team*
+### *Your Personal Multi-Agent AI Job Hunting Team*
 
 [![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org/)
 [![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python)](https://www.python.org/)
@@ -80,7 +80,7 @@ npm run dev
 ```
 
 ### 3. Configure Your Profile
-Create a `.env` file in the root folder with your keys. Then, open `config.py` and drop your resume file in the folder. The AI will read it automatically.
+Create a `.env` file in the root folder with your keys. Then, ensure you have a `RESUME.md` or `CV.md` file in the folder. The AI will read this Markdown file to perfectly understand your skills and projects.
 
 ---
 
@@ -91,7 +91,6 @@ Building a fully autonomous AI agent that interacts with the real web is incredi
 - **Bypassing Bot Protection:** Modern job portals (like Greenhouse and Lever) use aggressive anti-bot software like Cloudflare. Our browser automation sometimes gets blocked. Integrating advanced "stealth" browser techniques is an ongoing battle.
 - **100% Free Search:** We currently rely on the `Serper.dev` API to search Google because free alternatives (like DuckDuckGo scraping) aggressively IP-ban automated agents. Finding a stable, totally free search architecture is a top priority.
 - **Data Concurrency:** The dashboard and the AI backend currently share data via a simple `tracker.csv` file. This can cause read/write locks. Migrating to a robust local SQLite database is the next architectural step.
-- **Parsing Resumes:** We currently extract text from PDF resumes. PDFs are notoriously bad for data extraction, often ruining the formatting. Moving the system to ingest pure Markdown (`.md`) resumes will help the AI understand your skills much better.
 - **Email Verification Limits:** We use a commercial API (Emailable) to verify hiring managers' emails so your account doesn't get flagged for spam. Building a reliable, free local verifier (pinging SMTP servers directly) is complex but highly desired.
 
 ---
