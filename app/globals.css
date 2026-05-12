@@ -16,6 +16,7 @@
 }
 
 :root {
+  /* DARK THEME (Matrix - Default) */
   --bg-primary: #0f111a;
   --bg-sidebar: #12141d;
   --bg-card: #181a25;
@@ -28,6 +29,30 @@
   --accent-green: #10b981;
   --accent-orange: #f59e0b;
   --border-clr: rgba(255, 255, 255, 0.05);
+  --terminal-bg: #000000;
+  --terminal-text: #00ff41;
+  --terminal-glow: 0 0 10px rgba(0, 255, 65, 0.5);
+  --sidebar-glass: rgba(15, 17, 26, 0.9);
+}
+
+:root.light {
+  /* LIGHT THEME (Day Mode) */
+  --bg-primary: #f8fafc;
+  --bg-sidebar: #f1f5f9;
+  --bg-card: #ffffff;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --accent-purple: #7c3aed;
+  --accent-indigo: #4f46e5;
+  --accent-blue: #2563eb;
+  --accent-green: #059669;
+  --accent-orange: #d97706;
+  --border-clr: rgba(0, 0, 0, 0.05);
+  --terminal-bg: #f8fafc;
+  --terminal-text: #166534;
+  --terminal-glow: none;
+  --sidebar-glass: rgba(248, 250, 252, 0.9);
 }
 
 body {
@@ -35,6 +60,7 @@ body {
   color: var(--text-primary);
   font-family: var(--font-plus-jakarta-sans), sans-serif;
   overflow: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Sidebar Styling */
@@ -127,7 +153,7 @@ body {
 .stage-connector {
   flex: 0 0 30px;
   height: 1px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--border-clr);
 }
 
 .stage-connector.active {
@@ -141,8 +167,8 @@ body {
 
 /* AI Assistant Glassmorphism */
 .glass-sidebar {
-  background: rgba(15, 17, 26, 0.9);
+  background: var(--sidebar-glass);
   backdrop-filter: blur(16px);
-  border-left: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+  border-left: 1px solid var(--border-clr);
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.1);
 }

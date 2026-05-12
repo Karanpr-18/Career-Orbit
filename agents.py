@@ -100,6 +100,7 @@ class LiteLLMAgent:
                 response = router.completion(
                     model=self.model,
                     messages=self.memory,
+                    num_retries=0,
                     **self.generate_args
                 )
                 
@@ -126,6 +127,7 @@ class LiteLLMAgent:
                         response = router.completion(
                             model=self.fallback_model,
                             messages=self.memory,
+                            num_retries=0,
                             **self.fallback_args
                         )
                         reply_text = response.choices[0].message.content

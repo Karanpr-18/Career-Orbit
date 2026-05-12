@@ -18,6 +18,7 @@ export default function JobHuntApp() {
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [greeting, setGreeting] = useState('');
   const [stats, setStats] = useState({ total: 0, mailed: 0, accepted: 0, rejected: 0, interview: 0, today: 0 });
+  const [theme, setTheme] = useState('dark');
 
   const [agentStatus, setAgentStatus] = useState({
     status: 'idle',
@@ -42,6 +43,9 @@ export default function JobHuntApp() {
     else setGreeting('Good evening');
 
     setMounted(true);
+    // Sync theme
+    document.documentElement.classList.toggle('light', theme === 'light');
+
     fetchJobs();
     fetchAgentStatus();
     fetchLogs();
@@ -51,7 +55,7 @@ export default function JobHuntApp() {
       fetchLogs();
     }, 3000);
     return () => clearInterval(interval);
-  }, []);
+  }, [theme]);
 
   useEffect(() => {
     if (terminalRef.current) {
@@ -168,10 +172,10 @@ export default function JobHuntApp() {
   if (!mounted) return null;
 
   return (
-    <div className="flex w-full min-h-screen bg-[#0f111a] text-slate-200 overflow-hidden font-sans">
+    <div className="flex w-full min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] overflow-hidden font-sans transition-colors duration-300">
       
       {/* Sidebar Navigation */}
-      <nav className="w-72 bg-[#12141d] border-r border-white/5 flex flex-col shrink-0 z-40">
+      <nav className="w-72 bg-[var(--bg-sidebar)] border-r border-[var(--border-clr)] flex flex-col shrink-0 z-40">
         <div className="p-8 flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-lg">
             <Sparkles size={20} />
@@ -245,26 +249,33 @@ export default function JobHuntApp() {
       </nav>
 
       {/* Main Workspace */}
-      <main className="flex-1 flex flex-col h-screen relative bg-[#0f111a] overflow-hidden">
+      <main className="flex-1 flex flex-col h-screen relative bg-[var(--bg-primary)] overflow-hidden transition-colors duration-300">
         
         {/* Top Header */}
-        <header className="h-20 flex items-center justify-between px-10 border-b border-white/5 flex-none bg-[#0f111a]/80 backdrop-blur-xl z-20">
+        <header className="h-20 flex items-center justify-between px-10 border-b border-[var(--border-clr)] flex-none bg-[var(--bg-primary)]/80 backdrop-blur-xl z-20 transition-colors duration-300">
           <div>
-            <h2 className="text-xl font-bold text-white tracking-tight">{greeting}, Karan</h2>
+            <h2 className="text-xl font-bold tracking-tight">{greeting}, Karan</h2>
             <p className="text-[11px] text-slate-500 font-medium uppercase tracking-widest">Orbit Dashboard &bull; Agentic AI applicant</p>
           </div>
           
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
             <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={16} />
               <input 
                 type="text" 
                 placeholder="Search..." 
-                className="bg-white/5 border border-white/10 rounded-xl py-2 pl-11 pr-4 text-sm text-white focus:outline-none focus:border-indigo-500/50 w-64"
+                className="bg-white/5 border border-[var(--border-clr)] rounded-xl py-2 pl-11 pr-4 text-sm text-[var(--text-primary)] focus:outline-none focus:border-indigo-500/50 w-64"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
+            <button 
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 border border-[var(--border-clr)] hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-all text-slate-400"
+              title={theme === 'dark' ? "Switch to Day Mode" : "Switch to Night Mode"}
+            >
+              {theme === 'dark' ? <Sparkles size={18} /> : <Zap size={18} />}
+            </button>
           </div>
         </header>
 
@@ -282,7 +293,7 @@ export default function JobHuntApp() {
                     { label: 'Interviews', val: stats.interview, color: 'text-amber-400' },
                     { label: 'Offers', val: stats.accepted, color: 'text-emerald-400' }
                   ].map((s, i) => (
-                    <div key={i} className="bg-white/[0.02] border border-white/5 rounded-2xl p-6 hover:bg-white/[0.04] transition-all">
+                    <div key={i} className="bg-[var(--bg-card)] border border-[var(--border-clr)] rounded-2xl p-6 hover:bg-indigo-500/5 transition-all shadow-sm">
                       <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">{s.label}</p>
                       <h3 className={`text-3xl font-black ${s.color}`}>{s.val}</h3>
                     </div>
@@ -293,7 +304,7 @@ export default function JobHuntApp() {
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
                   {/* Table Column - Now 3/4 width */}
                   <div className="lg:col-span-3 space-y-6">
-                    <div className="bg-white/[0.02] border border-white/5 rounded-2xl overflow-hidden shadow-2xl">
+                    <div className="bg-[var(--bg-card)] border border-[var(--border-clr)] rounded-2xl overflow-hidden shadow-2xl">
                       <div className="px-6 py-4 border-b border-white/5 bg-white/[0.01] flex justify-between items-center">
                         <h3 className="text-xs font-black uppercase tracking-widest text-slate-300">Live Applications</h3>
                         <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
@@ -450,17 +461,20 @@ export default function JobHuntApp() {
                   </div>
                 </div>
 
-                <div className="bg-[#0a0c10] border border-white/5 rounded-2xl overflow-hidden h-[500px] flex flex-col shadow-2xl">
-                  <div className="px-6 py-3 border-b border-white/5 bg-[#11131c] flex items-center gap-4">
-                    <div className="flex gap-1.5">
-                      <div className="w-2 h-2 rounded-full bg-rose-500" />
-                      <div className="w-2 h-2 rounded-full bg-amber-500" />
-                      <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                <div className="bg-[var(--terminal-bg)] border border-[var(--border-clr)] rounded-2xl overflow-hidden h-[500px] flex flex-col shadow-2xl transition-colors duration-300">
+                  <div className="px-6 py-3 border-b border-[var(--border-clr)] bg-[var(--bg-sidebar)] flex justify-between items-center">
+                    <div className="flex items-center gap-4">
+                      <div className="flex gap-1.5">
+                        <div className="w-2 h-2 rounded-full bg-rose-500" />
+                        <div className="w-2 h-2 rounded-full bg-amber-500" />
+                        <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                      </div>
+                      <span className="text-[11px] font-mono text-slate-500">session_telemetry --raw --verbose</span>
                     </div>
-                    <span className="text-[11px] font-mono text-slate-500">session_telemetry --raw --verbose</span>
+                    <Terminal size={14} className="text-slate-600" />
                   </div>
-                  <div className="flex-1 p-8 font-mono text-xs overflow-y-auto custom-scrollbar bg-black/40" ref={terminalRef}>
-                    <pre className="text-emerald-500/90 whitespace-pre-wrap leading-relaxed filter drop-shadow-[0_0_2px_rgba(16,185,129,0.3)]">{agentLogs}</pre>
+                  <div className="flex-1 p-8 font-mono text-xs overflow-y-auto custom-scrollbar bg-black/5" ref={terminalRef}>
+                    <pre className="text-[var(--terminal-text)] whitespace-pre-wrap leading-relaxed filter drop-shadow-[var(--terminal-glow)]">{agentLogs}</pre>
                   </div>
                 </div>
               </div>
