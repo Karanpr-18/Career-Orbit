@@ -8,7 +8,7 @@ and sets all file paths and constants used across the system.
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(override=True)
 
 # ──────────────────────────────────────────────
 # API Keys

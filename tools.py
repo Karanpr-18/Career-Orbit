@@ -51,8 +51,12 @@ def serper_search(query: str) -> str:
         }
         
         response = requests.post(url, headers=headers, data=payload, timeout=20)
-        response.raise_for_status()
         
+        if response.status_code != 200:
+            masked_key = headers['X-API-KEY'][:6] + "..."
+            logger.error(f"[Scout] Serper API Error ({response.status_code}) using key {masked_key}: {response.text}")
+            return f"Search Error: {response.text}"
+            
         data = response.json()
         organic = data.get("organic", [])[:5]
         
@@ -72,15 +76,30 @@ def serper_search(query: str) -> str:
         logger.error(f"[Scout] Serper search failed for '{query}': {e}")
         return "Search Error: Check API Credits."
 
+def clean_job_description(text: str) -> str:
+    """
+    Strips noise (URLs, extra whitespace, image tags) to save tokens.
+    """
+    if not text: return ""
+    # Remove image markdown
+    text = re.sub(r'!\[.*?\]\(.*?\)', '', text)
+    # Remove generic URLs (not needed for JD analysis)
+    text = re.sub(r'http[s]?://\S+', '', text)
+    # Collapse multiple newlines
+    text = re.sub(r'\n\s*\n', '\n\n', text)
+    # Strip leading/trailing whitespace
+    return text.strip()
+
 def crawl_page(url: str) -> str:
     """
     Crawl a page using Crawl4AI to bypass bot protection.
-    Returns the first 2500 characters of markdown.
+    Returns cleaned markdown text.
     """
     async def _crawl_async():
         async with AsyncWebCrawler() as crawler:
             result = await crawler.arun(url=url, bypass_cache=True)
-            return result.markdown[:2500]
+            # Clean and truncate to save tokens while keeping core JD
+            return clean_job_description(result.markdown)[:2000]
 
     try:
         return asyncio.run(_crawl_async())

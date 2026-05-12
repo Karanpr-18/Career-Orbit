@@ -69,12 +69,23 @@ STATUS_PATH = os.path.join(BASE_DIR, "agent_status.json")
 
 def write_status(status="running", step="Initializing", done=0, total=50):
     try:
+        # Preserve PID from existing file if possible
+        pid = None
+        if os.path.exists(STATUS_PATH):
+            try:
+                with open(STATUS_PATH, "r") as rf:
+                    old_data = json.load(rf)
+                    pid = old_data.get("pid")
+            except:
+                pass
+
         with open(STATUS_PATH, "w") as f:
             json.dump({
                 "status": status,
                 "step": step,
                 "progress": {"done": done, "total": total},
-                "last_update": datetime.now().strftime("%H:%M:%S")
+                "last_update": datetime.now().strftime("%H:%M:%S"),
+                "pid": pid
             }, f)
     except Exception as e:
         logger.warning(f"Could not write status: {e}")
@@ -159,10 +170,9 @@ def run_scout_phase(scout_agent, existing_urls: set) -> list[dict]:
     Returns:
         A list of dicts with 'title', 'url', and 'company' for new jobs.
     """
-    logger.info("=" * 60)
     logger.info("PHASE 1: THE SCOUT – Discovering new job postings")
     logger.info("=" * 60)
-    write_status(step="Searching", done=0)
+    write_status(step="Scouting", done=count_successful_sends(), total=50)
 
     all_raw_results = []
 
@@ -184,13 +194,17 @@ def run_scout_phase(scout_agent, existing_urls: set) -> list[dict]:
         return parsed
 
     # Step 1: Run web searches for each query + site combination
-    for query in SEARCH_QUERIES:
+    total_queries = len(SEARCH_QUERIES)
+    for i, query in enumerate(SEARCH_QUERIES):
+        logger.info(f"🔍 Searching [{i+1}/{total_queries}]: {query}...")
+        write_status(step=f"Scouting: {query}", done=count_successful_sends(), total=50)
+        
         # Search across all sites
         results_str = serper_search(f'{query} "India"')
         all_raw_results.extend(_parse_serper_results(results_str))
 
-        # Also search specific target sites
-        for site in TARGET_SITES[:8]:  # Increased to top 8 sites
+        # Search top 3 most productive sites specifically to save time/API quota
+        for site in TARGET_SITES[:3]: 
             site_query = f'site:{site} "{query}" "India"'
             results_str = serper_search(site_query)
             all_raw_results.extend(_parse_serper_results(results_str))
@@ -261,6 +275,7 @@ def run_architect_phase(architect_agent, job: dict, my_cv_text: str) -> dict:
     """
     Run the Architect agent on a single job to score and route it.
     """
+    write_status(step="Reviewing", done=count_successful_sends(), total=50)
     url = job.get("url", "")
     logger.info(f"\n{'─' * 50}")
     logger.info(f"PHASE 2: THE ARCHITECT – Evaluating: {job.get('title', 'Unknown')}")
@@ -337,6 +352,7 @@ def run_ghostwriter_phase(ghostwriter_agent, analysis: dict, my_cv_text: str) ->
     """
     Run the Ghostwriter agent to draft a highly personalized cold email.
     """
+    write_status(step="Drafting", done=count_successful_sends(), total=50)
     logger.info(f"PHASE 3: THE GHOSTWRITER – Drafting personalized email for {analysis['company']}")
 
     jd_text = analysis.get("jd_text", "See job title and company.")
@@ -457,6 +473,7 @@ def run_dispatcher_phase(
     today = datetime.now().strftime("%Y-%m-%d")
 
     logger.info(f"PHASE 4: THE DISPATCHER – Executing '{action}' for {company}")
+    write_status(step="Mailing", done=count_successful_sends(), total=50)
 
     result = {
         "company": company,
@@ -583,6 +600,27 @@ def run_dispatcher_phase(
     return is_success
 
 
+def process_job(job, scout, architect, ghostwriter, dry_run, my_cv_text):
+    """
+    Orchestrates the lifecycle of a single job.
+    """
+    # Phase 2: Architect (Score & Route)
+    analysis = run_architect_phase(architect, job, my_cv_text)
+    
+    # Phase 4: Dispatcher (Execute & Log)
+    # The dispatcher handles Phase 3 (Ghostwriter) internally for token savings.
+    is_sent = run_dispatcher_phase(
+        analysis=analysis,
+        job_url=job["url"],
+        ghostwriter=ghostwriter,
+        architect=architect,
+        dry_run=dry_run,
+        my_cv_text=my_cv_text
+    )
+    
+    return is_sent
+
+
 # ──────────────────────────────────────────────
 # MAIN ORCHESTRATION PIPELINE
 # ──────────────────────────────────────────────
@@ -671,7 +709,12 @@ def run_pipeline(force: bool = False, dry_run: bool = False):
             logger.info(f"\n{'═' * 60}")
             logger.info(f"HUNTING [{successful_sends+1}/{target_apps}] | Checked: {total_checked} | Processing: {job.get('title', 'Unknown')}")
             logger.info(f"{'═' * 60}")
+            try:
+                is_sent = process_job(
+                    job=job,
+                    scout=scout,
                     architect=architect,
+                    ghostwriter=ghostwriter,
                     dry_run=dry_run,
                     my_cv_text=MY_CV_TEXT
                 )
@@ -682,7 +725,7 @@ def run_pipeline(force: bool = False, dry_run: bool = False):
                 
                 # Update status for the dashboard with progress bar
                 write_status(
-                    step=f"Progress: {successful_sends}/{target_apps} successful emails sent",
+                    step=f"Mailing: Progress {successful_sends}/{target_apps}",
                     done=successful_sends,
                     total=target_apps
                 )

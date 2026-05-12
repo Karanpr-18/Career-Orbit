@@ -42,7 +42,21 @@ export async function GET() {
         data: { status: 'idle', step: 'Ready', progress: { done: mailedCount, total: 50 } } 
       });
     }
+
     const data = JSON.parse(fs.readFileSync(STATUS_PATH, 'utf-8'));
+    
+    // Check if the running process is actually alive
+    if (data.status === 'running' && data.pid) {
+      try {
+        process.kill(data.pid, 0); 
+      } catch (e) {
+        // PID doesn't exist, reset to idle
+        data.status = 'idle';
+        data.step = 'Process interrupted';
+        fs.writeFileSync(STATUS_PATH, JSON.stringify(data), 'utf-8');
+      }
+    }
+
     // Ensure we use the latest mailed count even if the file is old
     if (data.status === 'idle') {
       data.progress.done = mailedCount;
@@ -113,9 +127,21 @@ export async function DELETE() {
     const data = JSON.parse(fs.readFileSync(STATUS_PATH, 'utf-8'));
     if (data.pid) {
       try {
-        process.kill(data.pid, 'SIGKILL'); // Use SIGKILL for immediate stop
+        // Kill the entire process group (negative PID on Unix)
+        process.kill(-data.pid, 'SIGKILL'); 
       } catch (e) {
+        // Fallback to single PID if group kill fails
+        try { process.kill(data.pid, 'SIGKILL'); } catch(e2) {}
         console.log('Process kill failed:', e.message);
+      }
+    } else {
+      // Emergency fallback if PID is missing: kill any job_hunter.py process
+      try {
+        const { exec } = require('child_process');
+        exec('pkill -f job_hunter.py');
+        console.log('--- EMERGENCY PKILL EXECUTED (PID was missing)');
+      } catch (e) {
+        console.error('Emergency pkill failed:', e);
       }
     }
 

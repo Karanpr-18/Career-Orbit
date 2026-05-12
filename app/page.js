@@ -180,12 +180,26 @@ export default function JobHuntApp() {
         </div>
 
         <div className="flex-1 px-4 space-y-1 mt-4">
-          <button onClick={() => setActiveTab('dashboard')} className={`w-full flex items-center gap-4 px-6 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'dashboard' ? 'bg-indigo-600/10 text-indigo-400 border-l-4 border-indigo-600' : 'text-slate-500 hover:text-white'}`}>
+          <div 
+            onClick={() => setActiveTab('dashboard')}
+            className={`flex items-center gap-4 px-6 py-4 rounded-xl transition-all duration-300 cursor-pointer group ${
+              activeTab === 'dashboard' 
+                ? 'bg-indigo-600/10 text-white shadow-[0_0_20px_rgba(79,70,229,0.15)] border-l-4 border-indigo-600' 
+                : 'text-slate-500 hover:text-slate-300 hover:bg-white/[0.02]'
+            }`}
+          >
             <LayoutDashboard size={18} /> Dashboard
-          </button>
-          <button onClick={() => setActiveTab('logs')} className={`w-full flex items-center gap-4 px-6 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'logs' ? 'bg-indigo-600/10 text-indigo-400 border-l-4 border-indigo-600' : 'text-slate-500 hover:text-white'}`}>
+          </div>
+          <div 
+            onClick={() => setActiveTab('logs')}
+            className={`flex items-center gap-4 px-6 py-4 rounded-xl transition-all duration-300 cursor-pointer group ${
+              activeTab === 'logs' 
+                ? 'bg-indigo-600/10 text-white shadow-[0_0_20px_rgba(79,70,229,0.15)] border-l-4 border-indigo-600' 
+                : 'text-slate-500 hover:text-slate-300 hover:bg-white/[0.02]'
+            }`}
+          >
             <Terminal size={18} /> Agent Logs
-          </button>
+          </div>
 
           <div className="pt-10 px-6">
             <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-4">Operations</h4>
@@ -202,11 +216,19 @@ export default function JobHuntApp() {
               </div>
             </div>
 
-            <button onClick={initializeAgent} disabled={agentStatus.status === 'running' || isInitializing} className="w-full py-3 rounded-xl bg-indigo-600 text-white text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 mb-3 disabled:opacity-50">
-              {isInitializing ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} fill="currentColor" />} Start Hunt
+            <button 
+              onClick={initializeAgent}
+              disabled={agentStatus.status !== 'idle'}
+              className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl py-4 flex items-center justify-center gap-3 font-black uppercase tracking-widest text-[10px] transition-all shadow-lg shadow-indigo-600/20 cursor-pointer mb-3"
+            >
+              {isInitializing ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} fill="currentColor" />} START HUNT
             </button>
-            <button onClick={stopAgent} disabled={agentStatus.status !== 'running' || isStopping} className="w-full py-3 rounded-xl bg-white/5 border border-white/10 text-white text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50">
-              {isStopping ? <Loader2 size={14} className="animate-spin" /> : <X size={14} strokeWidth={3} />} Stop Agent
+            <button 
+              onClick={stopAgent}
+              disabled={agentStatus.status === 'idle'}
+              className="w-full bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 text-slate-500 hover:text-rose-500 rounded-xl py-3 flex items-center justify-center gap-3 font-black uppercase tracking-widest text-[10px] transition-all cursor-pointer"
+            >
+              {isStopping ? <Loader2 size={14} className="animate-spin" /> : <X size={14} />} STOP AGENT
             </button>
           </div>
         </div>
@@ -306,7 +328,7 @@ export default function JobHuntApp() {
                                       <span className="text-xs text-slate-400 font-medium block truncate">{job.Role}</span>
                                     </td>
                                     <td className="py-4 px-4">
-                                      <a href={job.URL} target="_blank" className="text-[10px] text-blue-500 hover:text-blue-400 font-black uppercase tracking-widest transition-all whitespace-nowrap bg-blue-500/5 px-3 py-1.5 rounded-lg border border-blue-500/10">View Link</a>
+                                      <a href={job.URL} target="_blank" className="text-[10px] text-blue-500 hover:text-blue-400 font-black uppercase tracking-widest transition-all whitespace-nowrap bg-blue-500/5 px-3 py-1.5 rounded-lg border border-blue-500/10 cursor-pointer inline-block">View Link</a>
                                     </td>
                                     <td className="py-4 px-4">
                                       <div className="flex items-center gap-2">
@@ -337,11 +359,11 @@ export default function JobHuntApp() {
                                       <div className="flex items-center gap-2">
                                         {deleteConfirm === realIndex ? (
                                           <div className="flex items-center gap-2">
-                                            <button onClick={() => deleteJob(realIndex)} className="text-emerald-500 hover:scale-110 transition-transform"><Check size={14} /></button>
-                                            <button onClick={() => setDeleteConfirm(null)} className="text-slate-500 hover:scale-110 transition-transform"><X size={14} /></button>
+                                            <button onClick={() => deleteJob(realIndex)} className="text-emerald-500 hover:scale-110 transition-transform cursor-pointer"><Check size={14} /></button>
+                                            <button onClick={() => setDeleteConfirm(null)} className="text-slate-500 hover:scale-110 transition-transform cursor-pointer"><X size={14} /></button>
                                           </div>
                                         ) : (
-                                          <button onClick={() => setDeleteConfirm(realIndex)} className="text-slate-600 hover:text-rose-500 transition-colors"><Trash2 size={14} /></button>
+                                          <button onClick={() => setDeleteConfirm(realIndex)} className="text-slate-600 hover:text-rose-500 transition-colors cursor-pointer"><Trash2 size={14} /></button>
                                         )}
                                       </div>
                                     </td>
@@ -409,11 +431,22 @@ export default function JobHuntApp() {
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
-                    {['Scouting', 'Reviewing', 'Drafting', 'Mailing'].map((step, i) => (
-                      <div key={i} className={`flex-1 p-4 rounded-xl border text-center transition-all ${agentStatus.step.includes(step) ? 'bg-indigo-600/10 border-indigo-600/40 text-white' : 'bg-white/[0.01] border-white/5 text-slate-600'}`}>
-                        <p className="text-[10px] font-black uppercase tracking-widest">{step}</p>
-                      </div>
-                    ))}
+                    {['Scouting', 'Reviewing', 'Drafting', 'Mailing'].map((step, i) => {
+                      const isActive = agentStatus.step.toLowerCase().includes(step.toLowerCase());
+                      return (
+                        <div 
+                          key={i} 
+                          className={`flex-1 p-5 rounded-xl border text-center transition-all duration-500 ${
+                            isActive 
+                              ? 'bg-indigo-600/20 border-indigo-500 shadow-[0_0_20px_rgba(99,102,241,0.3)] text-white scale-[1.02] z-10 animate-pulse' 
+                              : 'bg-white/[0.01] border-white/5 text-slate-600 opacity-50'
+                          }`}
+                        >
+                          <p className={`text-[10px] font-black uppercase tracking-widest ${isActive ? 'text-indigo-400' : 'text-slate-600'}`}>{step}</p>
+                          {isActive && <div className="mt-2 h-0.5 w-8 mx-auto bg-indigo-500 rounded-full" />}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -426,8 +459,8 @@ export default function JobHuntApp() {
                     </div>
                     <span className="text-[11px] font-mono text-slate-500">session_telemetry --raw --verbose</span>
                   </div>
-                  <div className="flex-1 p-8 font-mono text-xs overflow-y-auto custom-scrollbar" ref={terminalRef}>
-                    <pre className="text-slate-400 whitespace-pre-wrap leading-relaxed">{agentLogs}</pre>
+                  <div className="flex-1 p-8 font-mono text-xs overflow-y-auto custom-scrollbar bg-black/40" ref={terminalRef}>
+                    <pre className="text-emerald-500/90 whitespace-pre-wrap leading-relaxed filter drop-shadow-[0_0_2px_rgba(16,185,129,0.3)]">{agentLogs}</pre>
                   </div>
                 </div>
               </div>
@@ -437,15 +470,15 @@ export default function JobHuntApp() {
       </main>
 
       {/* Floating AI Assistant Tag */}
-      <button 
-        onClick={() => setShowAssistant(!showAssistant)} 
-        className="fixed bottom-8 right-8 flex items-center gap-3 px-6 py-3.5 rounded-xl bg-indigo-600 text-white shadow-2xl shadow-indigo-600/40 hover:translate-y-[-4px] active:translate-y-0 transition-all z-[100] group"
+      <div 
+        onClick={() => setShowAssistant(!showAssistant)}
+        className="fixed bottom-8 right-8 z-[100] flex items-center gap-3 bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-3 rounded-2xl shadow-2xl shadow-indigo-600/40 transition-all hover:-translate-y-1 cursor-pointer group"
       >
         <div className="bg-white/10 p-1.5 rounded-lg group-hover:bg-white/20 transition-colors">
           <Bot size={18} strokeWidth={2.5} />
         </div>
         <span className="text-[11px] font-black uppercase tracking-widest">AI Assistant</span>
-      </button>
+      </div>
 
       {/* Orbit Assistant Sidebar */}
       <div className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-[110] transition-opacity duration-300 ${showAssistant ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={() => setShowAssistant(false)} />
