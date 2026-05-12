@@ -175,7 +175,7 @@ export default function JobHuntApp() {
     <div className="flex w-full min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] overflow-hidden font-sans transition-colors duration-300">
       
       {/* Sidebar Navigation */}
-      <nav className="w-72 bg-[var(--bg-sidebar)] border-r border-[var(--border-clr)] flex flex-col shrink-0 z-40">
+      <nav className="w-72 bg-[var(--bg-sidebar)] border-r border-[var(--border-clr)] flex flex-col shrink-0 z-40 transition-colors duration-300">
         <div className="p-8 flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-lg">
             <Sparkles size={20} />
@@ -188,8 +188,8 @@ export default function JobHuntApp() {
             onClick={() => setActiveTab('dashboard')}
             className={`flex items-center gap-4 px-6 py-4 rounded-xl transition-all duration-300 cursor-pointer group ${
               activeTab === 'dashboard' 
-                ? 'bg-indigo-600/10 text-white shadow-[0_0_20px_rgba(79,70,229,0.15)] border-l-4 border-indigo-600' 
-                : 'text-slate-500 hover:text-slate-300 hover:bg-white/[0.02]'
+                ? 'bg-[var(--accent-indigo)]/10 text-[var(--accent-indigo)] shadow-[0_0_20px_rgba(79,70,229,0.15)] border-l-4 border-[var(--accent-indigo)]' 
+                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--border-clr)]'
             }`}
           >
             <LayoutDashboard size={18} /> Dashboard
@@ -198,24 +198,24 @@ export default function JobHuntApp() {
             onClick={() => setActiveTab('logs')}
             className={`flex items-center gap-4 px-6 py-4 rounded-xl transition-all duration-300 cursor-pointer group ${
               activeTab === 'logs' 
-                ? 'bg-indigo-600/10 text-white shadow-[0_0_20px_rgba(79,70,229,0.15)] border-l-4 border-indigo-600' 
-                : 'text-slate-500 hover:text-slate-300 hover:bg-white/[0.02]'
+                ? 'bg-[var(--accent-indigo)]/10 text-[var(--accent-indigo)] shadow-[0_0_20px_rgba(79,70,229,0.15)] border-l-4 border-[var(--accent-indigo)]' 
+                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--border-clr)]'
             }`}
           >
             <Terminal size={18} /> Agent Logs
           </div>
 
           <div className="pt-10 px-6">
-            <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-4">Operations</h4>
-            <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4 mb-6">
+            <h4 className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-4">Operations</h4>
+            <div className="bg-[var(--bg-card)] border border-[var(--border-clr)] rounded-xl p-4 mb-6 transition-colors duration-300">
               <div className="flex justify-between items-center mb-2">
-                <span className="text-[10px] font-bold uppercase text-slate-500">Agent</span>
+                <span className="text-[10px] font-bold uppercase text-[var(--text-secondary)]">Agent</span>
                 <div className="flex items-center gap-1.5">
                   <div className={`w-2 h-2 rounded-full ${agentStatus.status === 'running' ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : 'bg-rose-500'}`} />
-                  <span className="text-[10px] font-black uppercase text-slate-300">{agentStatus.status}</span>
+                  <span className="text-[10px] font-black uppercase text-[var(--text-primary)]">{agentStatus.status}</span>
                 </div>
               </div>
-              <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+              <div className="h-1 bg-[var(--border-clr)] rounded-full overflow-hidden">
                 <div className={`h-full bg-emerald-500 transition-all duration-1000 ${agentStatus.status === 'running' ? 'w-full' : 'w-0'}`} />
               </div>
             </div>
@@ -230,19 +230,19 @@ export default function JobHuntApp() {
             <button 
               onClick={stopAgent}
               disabled={agentStatus.status === 'idle'}
-              className="w-full bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 text-slate-500 hover:text-rose-500 rounded-xl py-3 flex items-center justify-center gap-3 font-black uppercase tracking-widest text-[10px] transition-all cursor-pointer"
+              className="w-full bg-[var(--bg-card)] hover:bg-[var(--border-clr)] border border-[var(--border-clr)] text-[var(--text-secondary)] hover:text-rose-500 rounded-xl py-3 flex items-center justify-center gap-3 font-black uppercase tracking-widest text-[10px] transition-all cursor-pointer transition-colors duration-300"
             >
               {isStopping ? <Loader2 size={14} className="animate-spin" /> : <X size={14} />} STOP AGENT
             </button>
           </div>
         </div>
 
-        <div className="p-6 border-t border-white/5">
+        <div className="p-6 border-t border-[var(--border-clr)] transition-colors duration-300">
           <div className="flex items-center gap-3 p-2">
-            <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 text-xs font-black">KB</div>
+            <div className="w-8 h-8 rounded-lg bg-[var(--accent-indigo)]/10 border border-[var(--accent-indigo)]/20 flex items-center justify-center text-[var(--accent-indigo)] text-xs font-black">KB</div>
             <div className="min-w-0">
-              <p className="text-xs font-bold text-white truncate">Karan Bhoriya</p>
-              <p className="text-[10px] text-slate-500">Premium Plan</p>
+              <p className="text-xs font-bold text-[var(--text-primary)] truncate">Karan Bhoriya</p>
+              <p className="text-[10px] text-[var(--text-secondary)]">Premium Plan</p>
             </div>
           </div>
         </div>
@@ -255,23 +255,23 @@ export default function JobHuntApp() {
         <header className="h-20 flex items-center justify-between px-10 border-b border-[var(--border-clr)] flex-none bg-[var(--bg-primary)]/80 backdrop-blur-xl z-20 transition-colors duration-300">
           <div>
             <h2 className="text-xl font-bold tracking-tight">{greeting}, Karan</h2>
-            <p className="text-[11px] text-slate-500 font-medium uppercase tracking-widest">Orbit Dashboard &bull; Agentic AI applicant</p>
+            <p className="text-[11px] text-[var(--text-secondary)] font-medium uppercase tracking-widest">Orbit Dashboard &bull; Agentic AI applicant</p>
           </div>
           
           <div className="flex items-center gap-6">
             <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={16} />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]" size={16} />
               <input 
                 type="text" 
                 placeholder="Search..." 
-                className="bg-white/5 border border-[var(--border-clr)] rounded-xl py-2 pl-11 pr-4 text-sm text-[var(--text-primary)] focus:outline-none focus:border-indigo-500/50 w-64"
+                className="bg-[var(--bg-card)] border border-[var(--border-clr)] rounded-xl py-2 pl-11 pr-4 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-indigo)]/50 w-64 transition-colors duration-300"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
             <button 
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 border border-[var(--border-clr)] hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-all text-slate-400"
+              className="w-10 h-10 flex items-center justify-center rounded-xl bg-[var(--bg-card)] border border-[var(--border-clr)] hover:border-[var(--accent-indigo)]/50 hover:bg-[var(--accent-indigo)]/10 transition-all text-[var(--text-secondary)] transition-colors duration-300"
               title={theme === 'dark' ? "Switch to Day Mode" : "Switch to Night Mode"}
             >
               {theme === 'dark' ? <Sparkles size={18} /> : <Zap size={18} />}
@@ -288,13 +288,13 @@ export default function JobHuntApp() {
                 {/* Stats Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                   {[
-                    { label: 'Scouted', val: stats.total, color: 'text-indigo-400' },
-                    { label: 'Sent', val: stats.total, color: 'text-blue-400' },
-                    { label: 'Interviews', val: stats.interview, color: 'text-amber-400' },
-                    { label: 'Offers', val: stats.accepted, color: 'text-emerald-400' }
+                    { label: 'Scouted', val: stats.total, color: 'text-[var(--accent-indigo)]' },
+                    { label: 'Sent', val: stats.total, color: 'text-[var(--accent-blue)]' },
+                    { label: 'Interviews', val: stats.interview, color: 'text-[var(--accent-orange)]' },
+                    { label: 'Offers', val: stats.accepted, color: 'text-[var(--accent-green)]' }
                   ].map((s, i) => (
-                    <div key={i} className="bg-[var(--bg-card)] border border-[var(--border-clr)] rounded-2xl p-6 hover:bg-indigo-500/5 transition-all shadow-sm">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">{s.label}</p>
+                    <div key={i} className="bg-[var(--bg-card)] border border-[var(--border-clr)] rounded-2xl p-6 hover:bg-[var(--accent-indigo)]/5 transition-all shadow-sm">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] mb-1">{s.label}</p>
                       <h3 className={`text-3xl font-black ${s.color}`}>{s.val}</h3>
                     </div>
                   ))}
@@ -305,14 +305,14 @@ export default function JobHuntApp() {
                   {/* Table Column - Now 3/4 width */}
                   <div className="lg:col-span-3 space-y-6">
                     <div className="bg-[var(--bg-card)] border border-[var(--border-clr)] rounded-2xl overflow-hidden shadow-2xl transition-colors duration-300">
-                      <div className="px-6 py-4 border-b border-[var(--border-clr)] bg-[var(--bg-card)] flex justify-between items-center">
+                      <div className="px-6 py-4 border-b border-[var(--border-clr)] bg-[var(--bg-card)] flex justify-between items-center transition-colors duration-300">
                         <h3 className="text-xs font-black uppercase tracking-widest text-[var(--text-primary)]">Live Applications</h3>
-                        <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
+                        <div className="w-2 h-2 rounded-full bg-[var(--accent-indigo)] animate-pulse shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
                       </div>
                       <div className="w-full max-h-[750px] overflow-auto custom-scrollbar">
                         <table className="w-full text-left table-fixed">
-                          <thead className="sticky top-0 bg-[var(--bg-sidebar)] z-20">
-                            <tr className="text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-[var(--border-clr)] shadow-sm">
+                          <thead className="sticky top-0 bg-[var(--bg-sidebar)] z-20 transition-colors duration-300">
+                            <tr className="text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] border-b border-[var(--border-clr)] shadow-sm">
                               <th className="px-6 py-4 w-[22%]">Company</th>
                               <th className="py-4 w-[28%]">Role</th>
                               <th className="py-4 w-[12%]">Link</th>
@@ -323,39 +323,39 @@ export default function JobHuntApp() {
                           </thead>
                           <tbody className="divide-y divide-[var(--border-clr)]">
                             {loading ? (
-                              <tr><td colSpan="6" className="text-center py-10"><Loader2 size={24} className="animate-spin mx-auto text-indigo-500" /></td></tr>
+                              <tr><td colSpan="6" className="text-center py-10"><Loader2 size={24} className="animate-spin mx-auto text-[var(--accent-indigo)]" /></td></tr>
                             ) : jobs.length === 0 ? (
-                              <tr><td colSpan="6" className="text-center py-10 text-xs text-slate-500">No data available.</td></tr>
+                              <tr><td colSpan="6" className="text-center py-10 text-xs text-[var(--text-secondary)]">No data available.</td></tr>
                             ) : (
                               jobs.map((job, i) => {
                                 const realIndex = jobs.indexOf(job);
                                 return (
-                                  <tr key={i} className="hover:bg-indigo-500/5 transition-colors group">
+                                  <tr key={i} className="hover:bg-[var(--accent-indigo)]/5 transition-colors group">
                                     <td className="px-6 py-4">
                                       <span className="font-bold text-[var(--text-primary)] text-sm block truncate">{job.Company}</span>
-                                      <span className="text-[10px] text-slate-600 uppercase font-black">{job.Date || 'Recent'}</span>
+                                      <span className="text-[10px] text-[var(--text-muted)] uppercase font-black">{job.Date || 'Recent'}</span>
                                     </td>
                                     <td className="py-4">
-                                      <span className="text-xs text-slate-400 font-medium block truncate">{job.Role}</span>
+                                      <span className="text-xs text-[var(--text-secondary)] font-medium block truncate">{job.Role}</span>
                                     </td>
                                     <td className="py-4 px-4">
-                                      <a href={job.URL} target="_blank" className="text-[10px] text-blue-500 hover:text-blue-400 font-black uppercase tracking-widest transition-all whitespace-nowrap bg-blue-500/5 px-3 py-1.5 rounded-lg border border-blue-500/10 cursor-pointer inline-block">View Link</a>
+                                      <a href={job.URL} target="_blank" className="text-[10px] text-[var(--accent-blue)] hover:opacity-80 font-black uppercase tracking-widest transition-all whitespace-nowrap bg-[var(--accent-blue)]/5 px-3 py-1.5 rounded-lg border border-[var(--accent-blue)]/10 cursor-pointer inline-block">View Link</a>
                                     </td>
                                     <td className="py-4 px-4">
                                       <div className="flex items-center gap-2">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-slate-500" />
-                                        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">{job['Portal Status'] || 'Applied'}</span>
+                                        <div className="w-1.5 h-1.5 rounded-full bg-[var(--text-secondary)]" />
+                                        <span className="text-[10px] text-[var(--text-secondary)] font-bold uppercase tracking-tight">{job['Portal Status'] || 'Applied'}</span>
                                       </div>
                                     </td>
                                     <td className="py-4 px-4 text-center">
                                       <div className={`inline-flex items-center rounded-lg border px-2 py-1 ${
-                                        job['Application Status']?.toLowerCase().includes('accept') ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' :
+                                        job['Application Status']?.toLowerCase().includes('accept') ? 'bg-emerald-500/10 border-emerald-500/20 text-[var(--accent-green)]' :
                                         job['Application Status']?.toLowerCase().includes('reject') ? 'bg-rose-500/10 border-rose-500/20 text-rose-500' :
-                                        job['Application Status']?.toLowerCase().includes('interview') ? 'bg-amber-500/10 border-amber-500/20 text-amber-500' :
-                                        'bg-indigo-600/10 border-indigo-600/20 text-indigo-400'
+                                        job['Application Status']?.toLowerCase().includes('interview') ? 'bg-amber-500/10 border-amber-500/20 text-[var(--accent-orange)]' :
+                                        'bg-indigo-600/10 border-indigo-600/20 text-[var(--accent-indigo)]'
                                       }`}>
                                         <select 
-                                          className="bg-transparent text-[10px] font-black uppercase tracking-widest outline-none cursor-pointer"
+                                          className="bg-transparent text-[10px] font-black uppercase tracking-widest outline-none cursor-pointer text-current"
                                           value={job['Application Status'] || 'Mailed'}
                                           onChange={(e) => updateStatus(realIndex, e.target.value)}
                                         >
@@ -367,14 +367,14 @@ export default function JobHuntApp() {
                                       </div>
                                     </td>
                                     <td className="py-4 px-6">
-                                      <div className="flex items-center gap-2">
+                                      <div className="flex items-center justify-end gap-2">
                                         {deleteConfirm === realIndex ? (
                                           <div className="flex items-center gap-2">
-                                            <button onClick={() => deleteJob(realIndex)} className="text-emerald-500 hover:scale-110 transition-transform cursor-pointer"><Check size={14} /></button>
-                                            <button onClick={() => setDeleteConfirm(null)} className="text-slate-500 hover:scale-110 transition-transform cursor-pointer"><X size={14} /></button>
+                                            <button onClick={() => deleteJob(realIndex)} className="text-[var(--accent-green)] hover:scale-110 transition-transform cursor-pointer"><Check size={14} /></button>
+                                            <button onClick={() => setDeleteConfirm(null)} className="text-[var(--text-secondary)] hover:scale-110 transition-transform cursor-pointer"><X size={14} /></button>
                                           </div>
                                         ) : (
-                                          <button onClick={() => setDeleteConfirm(realIndex)} className="text-slate-600 hover:text-rose-500 transition-colors cursor-pointer"><Trash2 size={14} /></button>
+                                          <button onClick={() => setDeleteConfirm(realIndex)} className="text-[var(--text-secondary)] hover:text-rose-500 transition-colors cursor-pointer"><Trash2 size={14} /></button>
                                         )}
                                       </div>
                                     </td>
@@ -390,13 +390,13 @@ export default function JobHuntApp() {
 
                   {/* Sidebar Analytics - Now 1/4 width */}
                   <div className="lg:col-span-1 space-y-6">
-                    <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-8 flex flex-col items-center">
-                      <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-8">Daily Progress</h4>
+                    <div className="bg-[var(--bg-card)] border border-[var(--border-clr)] rounded-2xl p-8 flex flex-col items-center transition-colors duration-300">
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] mb-8">Daily Progress</h4>
                       <div className="relative w-40 h-40 mb-8 flex items-center justify-center">
                         <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-                          <circle cx="50" cy="50" r="44" fill="transparent" stroke="rgba(255,255,255,0.02)" strokeWidth="8" />
+                          <circle cx="50" cy="50" r="44" fill="transparent" stroke="var(--border-clr)" strokeWidth="8" className="transition-colors duration-300" />
                           <circle 
-                            cx="50" cy="50" r="44" fill="transparent" stroke="#4f46e5" strokeWidth="8" 
+                            cx="50" cy="50" r="44" fill="transparent" stroke="var(--accent-indigo)" strokeWidth="8" 
                             strokeDasharray="276" 
                             strokeDashoffset={276 - (276 * (Math.min(stats.today, 50) / 50))}
                             strokeLinecap="round"
@@ -404,27 +404,27 @@ export default function JobHuntApp() {
                           />
                         </svg>
                         <div className="absolute flex flex-col items-center">
-                          <span className="text-4xl font-black text-white leading-none">{stats.today}</span>
-                          <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest mt-1">Today</span>
+                          <span className="text-4xl font-black text-[var(--text-primary)] leading-none">{stats.today}</span>
+                          <span className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest mt-1">Today</span>
                         </div>
                       </div>
                       <div className="w-full space-y-4">
-                        <div className="flex justify-between items-center text-[10px] font-black uppercase text-slate-500">
+                        <div className="flex justify-between items-center text-[10px] font-black uppercase text-[var(--text-secondary)]">
                           <span>Daily Target</span>
                           <span>50 Units</span>
                         </div>
-                        <div className="h-1 bg-white/5 rounded-full overflow-hidden">
-                          <div className="h-full bg-indigo-600 transition-all duration-1000" style={{ width: `${(Math.min(stats.today, 50) / 50) * 100}%` }} />
+                        <div className="h-1 bg-[var(--border-clr)] rounded-full overflow-hidden transition-colors duration-300">
+                          <div className="h-full bg-[var(--accent-indigo)] transition-all duration-1000" style={{ width: `${(Math.min(stats.today, 50) / 50) * 100}%` }} />
                         </div>
                       </div>
                     </div>
 
-                    <div className="bg-indigo-600/10 border border-indigo-600/20 rounded-2xl p-6">
+                    <div className="bg-[var(--accent-indigo)]/10 border border-[var(--accent-indigo)]/20 rounded-2xl p-6 transition-colors duration-300">
                       <div className="flex items-center gap-3 mb-4">
-                        <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white"><ShieldCheck size={18} /></div>
-                        <h4 className="text-xs font-black uppercase tracking-widest">Active Safety</h4>
+                        <div className="w-8 h-8 rounded-lg bg-[var(--accent-indigo)] flex items-center justify-center text-white"><ShieldCheck size={18} /></div>
+                        <h4 className="text-xs font-black uppercase tracking-widest text-[var(--accent-indigo)]">Active Safety</h4>
                       </div>
-                      <p className="text-[11px] text-indigo-400 font-medium leading-relaxed">Agent is operating within safety thresholds. Hallucination check enabled for personalized drafts.</p>
+                      <p className="text-[11px] text-[var(--accent-indigo)] font-medium leading-relaxed opacity-80">Agent is operating within safety thresholds. Hallucination check enabled for personalized drafts.</p>
                     </div>
                   </div>
 
@@ -433,10 +433,10 @@ export default function JobHuntApp() {
             ) : (
               /* Agent Logs View */
               <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="bg-[var(--bg-card)] border border-[var(--border-clr)] rounded-2xl p-8">
+                <div className="bg-[var(--bg-card)] border border-[var(--border-clr)] rounded-2xl p-8 transition-colors duration-300">
                   <div className="flex justify-between items-center mb-8">
                     <h3 className="text-xs font-black uppercase tracking-widest text-[var(--text-primary)]">Execution Strategy</h3>
-                    <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 text-emerald-500 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-500/20">
+                    <div className="flex items-center gap-2 px-3 py-1 bg-[var(--accent-green)]/10 text-[var(--accent-green)] rounded-full text-[10px] font-black uppercase tracking-widest border border-[var(--accent-green)]/20">
                       <div className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
                       Step: {agentStatus.step}
                     </div>
@@ -449,12 +449,12 @@ export default function JobHuntApp() {
                           key={i} 
                           className={`flex-1 p-5 rounded-xl border text-center transition-all duration-500 ${
                             isActive 
-                              ? 'bg-indigo-600/20 border-indigo-500 shadow-[0_0_20px_rgba(99,102,241,0.3)] text-white scale-[1.02] z-10 animate-pulse' 
-                              : 'bg-white/[0.01] border-white/5 text-slate-600 opacity-50'
+                              ? 'bg-[var(--accent-indigo)]/10 border-[var(--accent-indigo)] shadow-[0_0_20px_rgba(99,102,241,0.3)] scale-[1.02] z-10 animate-pulse text-[var(--accent-indigo)]' 
+                              : 'bg-[var(--bg-card)] border-[var(--border-clr)] text-[var(--text-secondary)] opacity-50'
                           }`}
                         >
-                          <p className={`text-[10px] font-black uppercase tracking-widest ${isActive ? 'text-indigo-400' : 'text-slate-600'}`}>{step}</p>
-                          {isActive && <div className="mt-2 h-0.5 w-8 mx-auto bg-indigo-500 rounded-full" />}
+                          <p className={`text-[10px] font-black uppercase tracking-widest`}>{step}</p>
+                          {isActive && <div className="mt-2 h-0.5 w-8 mx-auto bg-[var(--accent-indigo)] rounded-full" />}
                         </div>
                       );
                     })}
@@ -462,19 +462,19 @@ export default function JobHuntApp() {
                 </div>
 
                 <div className="bg-[var(--terminal-bg)] border border-[var(--border-clr)] rounded-2xl overflow-hidden h-[500px] flex flex-col shadow-2xl transition-colors duration-300">
-                  <div className="px-6 py-3 border-b border-[var(--border-clr)] bg-[var(--bg-sidebar)] flex justify-between items-center">
+                  <div className="px-6 py-3 border-b border-[var(--border-clr)] bg-[var(--bg-sidebar)] flex justify-between items-center transition-colors duration-300">
                     <div className="flex items-center gap-4">
                       <div className="flex gap-1.5">
                         <div className="w-2 h-2 rounded-full bg-rose-500" />
                         <div className="w-2 h-2 rounded-full bg-amber-500" />
                         <div className="w-2 h-2 rounded-full bg-emerald-500" />
                       </div>
-                      <span className="text-[11px] font-mono text-slate-500">session_telemetry --raw --verbose</span>
+                      <span className="text-[11px] font-mono text-[var(--text-secondary)]">session_telemetry --raw --verbose</span>
                     </div>
-                    <Terminal size={14} className="text-slate-600" />
+                    <Terminal size={14} className="text-[var(--text-secondary)]" />
                   </div>
-                  <div className="flex-1 p-8 font-mono text-xs overflow-y-auto custom-scrollbar bg-black/5" ref={terminalRef}>
-                    <pre className="text-[var(--terminal-text)] whitespace-pre-wrap leading-relaxed filter drop-shadow-[var(--terminal-glow)]">{agentLogs}</pre>
+                  <div className="flex-1 p-8 font-mono text-xs overflow-y-auto custom-scrollbar" ref={terminalRef}>
+                    <pre className="text-[var(--terminal-text)] whitespace-pre-wrap leading-relaxed filter drop-shadow-[var(--terminal-glow)] transition-colors duration-300">{agentLogs}</pre>
                   </div>
                 </div>
               </div>
@@ -486,12 +486,12 @@ export default function JobHuntApp() {
       {/* Floating AI Assistant Tag */}
       <div 
         onClick={() => setShowAssistant(!showAssistant)}
-        className="fixed bottom-8 right-8 z-[100] flex items-center gap-3 bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-3 rounded-2xl shadow-2xl shadow-indigo-600/40 transition-all hover:-translate-y-1 cursor-pointer group"
+        className="fixed bottom-8 right-8 z-[100] flex items-center gap-3 bg-[var(--accent-indigo)] hover:opacity-90 text-white px-5 py-3 rounded-2xl shadow-2xl shadow-indigo-600/40 transition-all hover:-translate-y-1 cursor-pointer group"
       >
         <div className="bg-white/10 p-1.5 rounded-lg group-hover:bg-white/20 transition-colors">
           <Bot size={18} strokeWidth={2.5} />
         </div>
-        <span className="text-[11px] font-black uppercase tracking-widest">AI Assistant</span>
+        <span className="text-[11px] font-black uppercase tracking-widest text-white">AI Assistant</span>
       </div>
 
       {/* Orbit Assistant Sidebar */}
@@ -500,26 +500,26 @@ export default function JobHuntApp() {
       <aside className={`fixed top-0 right-0 w-[420px] h-full bg-[var(--bg-sidebar)] z-[120] shadow-2xl transition-transform duration-500 ease-in-out p-10 flex flex-col ${showAssistant ? 'translate-x-0' : 'translate-x-full'}`}>
         <div className="flex justify-between items-center mb-10 flex-none">
           <div className="flex items-center gap-3">
-            <Bot size={24} className="text-indigo-500" />
-            <h2 className="text-xl font-black uppercase tracking-tighter text-[var(--text-primary)]">Career-Orbit <span className="text-indigo-500 italic">Copilot</span></h2>
+            <Bot size={24} className="text-[var(--accent-indigo)]" />
+            <h2 className="text-xl font-black uppercase tracking-tighter text-[var(--text-primary)]">Career-Orbit <span className="text-[var(--accent-indigo)] italic">Copilot</span></h2>
           </div>
-          <button onClick={() => setShowAssistant(false)} className="text-slate-500 hover:text-indigo-500 transition-colors"><X size={24} /></button>
+          <button onClick={() => setShowAssistant(false)} className="text-[var(--text-secondary)] hover:text-[var(--accent-indigo)] transition-colors"><X size={24} /></button>
         </div>
 
         <div className="flex-1 overflow-y-auto space-y-6 pr-2 custom-scrollbar mb-8">
           {messages.map((m, i) => (
             <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm font-medium leading-relaxed ${m.role === 'user' ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-white/5 text-slate-400 border border-white/5 rounded-tl-none'}`}>
+              <div className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm font-medium leading-relaxed ${m.role === 'user' ? 'bg-[var(--accent-indigo)] text-white rounded-tr-none' : 'bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border-clr)] rounded-tl-none transition-colors duration-300'}`}>
                 {m.content}
               </div>
             </div>
           ))}
           {isTyping && (
             <div className="flex justify-start">
-              <div className="bg-white/5 px-4 py-3 rounded-2xl flex items-center gap-1">
-                <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce" />
-                <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce [animation-delay:0.2s]" />
-                <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce [animation-delay:0.4s]" />
+              <div className="bg-[var(--bg-card)] border border-[var(--border-clr)] px-4 py-3 rounded-2xl flex items-center gap-1 transition-colors duration-300">
+                <div className="w-1.5 h-1.5 bg-[var(--accent-indigo)] rounded-full animate-bounce" />
+                <div className="w-1.5 h-1.5 bg-[var(--accent-indigo)] rounded-full animate-bounce [animation-delay:0.2s]" />
+                <div className="w-1.5 h-1.5 bg-[var(--accent-indigo)] rounded-full animate-bounce [animation-delay:0.4s]" />
               </div>
             </div>
           )}
@@ -530,12 +530,12 @@ export default function JobHuntApp() {
           <input 
             type="text" 
             placeholder="Ask Copilot..." 
-            className="w-full bg-black/40 border border-white/5 rounded-2xl py-4 px-6 text-sm text-white focus:outline-none focus:border-indigo-500/50 transition-all pr-14"
+            className="w-full bg-[var(--bg-card)] border border-[var(--border-clr)] rounded-2xl py-4 px-6 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-indigo)] transition-all pr-14 transition-colors duration-300"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
           />
-          <button onClick={sendMessage} className="absolute right-3 top-2.5 w-11 h-11 rounded-xl bg-indigo-600 flex items-center justify-center text-white hover:bg-indigo-500 transition-all">
+          <button onClick={sendMessage} className="absolute right-3 top-2.5 w-11 h-11 rounded-xl bg-[var(--accent-indigo)] flex items-center justify-center text-white hover:opacity-90 transition-all">
             <Send size={18} />
           </button>
         </div>

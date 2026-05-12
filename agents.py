@@ -254,6 +254,7 @@ CRITICAL FORMATTING RULES:
 1. **Salutation**: ALWAYS start with "Hi [Name]," or "Hi [Company] Team,".
 2. **Spacing**: You MUST use a DOUBLE NEWLINE (\\n\\n) between EVERY block (Salutation, Para 1, Para 2, Para 3, Sign-off).
 3. **No Walls of Text**: Each paragraph must be exactly 1-2 sentences. 
+4. Always add self intro like "I'm Karan Bhoriya, an AI engineer passionate about building real-world AI applications."
 
 STRICT WRITING STYLE:
 - **Tone**: Engineering-focused, results-driven, "Gen-Z Professional" (no fluff).

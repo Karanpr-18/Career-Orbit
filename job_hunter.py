@@ -385,16 +385,19 @@ def run_ghostwriter_phase(ghostwriter_agent, analysis: dict, my_cv_text: str) ->
         # Fallback email
         email_text = _fallback_email(analysis)
 
-    # Parse subject and body
-    subject = ""
-    body = email_text
-
-    if email_text.lower().startswith("subject:"):
-        lines = email_text.split("\n", 1)
-        subject = lines[0].replace("Subject:", "").replace("subject:", "").strip()
-        body = lines[1].strip() if len(lines) > 1 else ""
+    # Clean markdown
+    clean_text = email_text.replace("**", "").strip()
+    
+    import re
+    match = re.match(r"(?i)^(?:subject:\s*)(.*?)(?:\n\s*(?:body:)?\s*\n|\n)(.*)", clean_text, re.DOTALL)
+    if match:
+        subject = match.group(1).strip()
+        body = match.group(2).strip()
     else:
-        subject = f"Application: {analysis['role']} at {analysis['company']} – Karan Bhoriya"
+        subject = f"Application: {analysis.get('role', 'Unknown')} at {analysis.get('company', 'Unknown')} – Karan Bhoriya"
+        body = clean_text
+        
+    body = re.sub(r"(?i)^body:\s*", "", body).strip()
 
     # Ensure the mandatory sign-off is present
     signoff = KARAN_PROFILE["mandatory_signoff"]

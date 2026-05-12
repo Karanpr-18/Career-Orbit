@@ -399,6 +399,7 @@ def search_hiring_email(company_name: str, job_url: str = "", jd_text: str = "")
             f"You are an OSINT Investigator looking for the email of {company_name}.\n"
             "TARGETS: Hiring Manager, Talent Acquisition, HR, Engineering Manager, Senior Engineers, or the job poster.\n"
             "If HR is not found, look for ANY verified employee in the relevant department.\n"
+            "You MUST output plain text ONLY. DO NOT use native JSON tool calls.\n"
             "Tools: Action: SEARCH | Target: <query>, Action: READ | Target: <url>"
         ),
         model_config_name="investigator_model_config",
