@@ -139,7 +139,7 @@ MODEL_CONFIGS = [
     {
         "config_name": "scout_model_config",
         "model_type": "litellm_chat",
-        "model_name": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
+        "model_name": "mistral/mistral-small-latest",
         "generate_args": {
             "temperature": 0.3,
         },
@@ -147,7 +147,7 @@ MODEL_CONFIGS = [
     {
         "config_name": "architect_model_config",
         "model_type": "litellm_chat",
-        "model_name": "cerebras/qwen-3-235b-a22b-instruct-2507",
+        "model_name": "mistral/mistral-large-latest",
         "generate_args": {
             "temperature": 0.2,
             "max_tokens": 4000,
@@ -173,7 +173,7 @@ MODEL_CONFIGS = [
     {
         "config_name": "ghostwriter_fallback_model",
         "model_type": "litellm_chat",
-        "model_name": "cerebras/zai-glm-4.7",
+        "model_name": "mistral/mistral-medium-latest",
         "generate_args": {
             "temperature": 0.6,
         },
@@ -181,7 +181,7 @@ MODEL_CONFIGS = [
     {
         "config_name": "investigator_model_config",
         "model_type": "litellm_chat",
-        "model_name": "cerebras/gpt-oss-120b",
+        "model_name": "mistral/mistral-large-latest",
         "generate_args": {
             "temperature": 0.1,
             "max_tokens": 4000,
